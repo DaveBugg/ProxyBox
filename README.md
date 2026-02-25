@@ -2,6 +2,14 @@
 
 Open-source Android VPN client powered by [Xray-core](https://github.com/XTLS/Xray-core). Designed for both **mobile phones** and **Android TV / set-top boxes**.
 
+## Donate
+
+If you find this project useful, consider supporting development:
+
+**USDT (TRC20):** `TMWTigPZgTkekaRUjUrhJUNENFeUAE7T15`
+
+<img src="docs/donate_usdt_trc20.png" alt="Donate USDT TRC20" width="200"/>
+
 ## Features
 
 - **Multi-protocol support**: VLESS, VMess, Shadowsocks, Trojan, Hysteria2
@@ -58,7 +66,7 @@ com.dave_cli.proxybox
 
 ```bash
 # Clone the repository
-git clone https://github.com/youruser/ProxyBox.git
+git clone https://github.com/DaveBugg/ProxyBox.git
 cd ProxyBox
 
 # Build debug APK
@@ -98,7 +106,7 @@ Add a subscription URL in the Add Config screen or via the local server web page
 
 ## License
 
-This project is open source. See [LICENSE](LICENSE) for details.
+This project is licensed under the GNU General Public License v3.0. See [LICENSE](LICENSE) for details.
 
 ## Credits
 
