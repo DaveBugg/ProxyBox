@@ -1,0 +1,105 @@
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.ksp)
+}
+
+android {
+    namespace 'com.dave_cli.proxybox'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "com.dave_cli.proxybox"
+        minSdk 24
+        targetSdk 35
+        versionCode 4
+        versionName "1.0.3"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        ndk {
+            abiFilters "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+    externalNativeBuild {
+        ndkBuild {
+            path file('src/main/jni/Android.mk')
+        }
+    }
+    buildFeatures {
+        viewBinding true
+    }
+    packaging {
+        resources {
+            excludes += '/META-INF/{AL2.0,LGPL2.1}'
+            excludes += '/META-INF/INDEX.LIST'
+        }
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+}
+
+dependencies {
+    // AndroidX Core
+    implementation libs.androidx.core.ktx
+    implementation libs.androidx.lifecycle.runtime.ktx
+    implementation libs.androidx.lifecycle.viewmodel.ktx
+    implementation libs.androidx.activity.ktx
+    implementation libs.androidx.fragment.ktx
+    implementation libs.androidx.appcompat
+    implementation libs.material
+    implementation libs.androidx.recyclerview
+    implementation libs.androidx.constraintlayout
+
+    // Android TV / Leanback
+    implementation libs.androidx.leanback
+
+    // Room Database
+    implementation libs.room.runtime
+    implementation libs.room.ktx
+    ksp libs.room.compiler
+
+    // Kotlin Coroutines
+    implementation libs.kotlinx.coroutines.android
+
+    // Gson (JSON parsing)
+    implementation libs.gson
+
+    // ZXing QR Code (scan + generate)
+    implementation libs.zxing.android.embedded
+    implementation libs.zxing.core
+
+    // NanoHTTPD (local HTTP server)
+    implementation libs.nanohttpd
+
+    // Retrofit + OkHttp (subscriptions)
+    implementation libs.retrofit
+    implementation libs.retrofit.converter.gson
+    implementation libs.okhttp
+    implementation libs.okhttp.logging
+
+    // WorkManager (geo-bases auto-update)
+    implementation libs.androidx.work.runtime.ktx
+
+    // libv2ray (xray core)
+    implementation fileTree(dir: 'libs', include: ['*.aar', '*.jar'])
+
+    testImplementation libs.junit
+    androidTestImplementation libs.androidx.junit
+    androidTestImplementation libs.androidx.espresso.core
+}

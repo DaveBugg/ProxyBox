@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/profileRoot"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="16dp"
+    android:background="?android:attr/selectableItemBackground"
+    android:focusable="true"
+    android:focusableInTouchMode="false"
+    android:gravity="center_vertical">
+
+    <!-- Selection indicator -->
+    <View
+        android:id="@+id/viewSelectedIndicator"
+        android:layout_width="4dp"
+        android:layout_height="match_parent"
+        android:layout_marginEnd="12dp"
+        android:background="#7C6FFF"
+        android:visibility="gone"/>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#E0E0FF"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:duplicateParentState="true"/>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="4dp">
+
+            <TextView
+                android:id="@+id/tvProtocol"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#7C6FFF"
+                android:textSize="14sp"
+                android:duplicateParentState="true"/>
+
+            <TextView
+                android:id="@+id/tvLatency"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="14sp"
+                android:layout_marginStart="12dp"
+                android:visibility="gone"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tvSelectedBadge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="✓ ACTIVE"
+        android:textColor="#4ADE80"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:visibility="gone"/>
+
+</LinearLayout>

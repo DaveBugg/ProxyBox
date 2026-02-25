@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="#0F0F1A">
+
+    <!-- Paste URL / JSON -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Paste Config URL or JSON"
+        android:textColor="#7C6FFF"
+        android:textSize="12sp"
+        android:textAllCaps="true"
+        android:letterSpacing="0.1"
+        android:paddingBottom="8dp"/>
+
+    <EditText
+        android:id="@+id/etConfig"
+        android:layout_width="match_parent"
+        android:layout_height="120dp"
+        android:hint="vless://... or vmess://... or full JSON"
+        android:textColorHint="#555577"
+        android:textColor="#E0E0FF"
+        android:background="@drawable/bg_input"
+        android:padding="12dp"
+        android:gravity="top|start"
+        android:inputType="textMultiLine"
+        android:fontFamily="monospace"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnImportText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Import Config"
+        android:textColor="#FFFFFF"
+        app:backgroundTint="#7C6FFF"
+        app:cornerRadius="10dp"/>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#2A2A4A"
+        android:layout_marginVertical="20dp"/>
+
+    <!-- QR Code buttons -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="QR Code"
+        android:textColor="#7C6FFF"
+        android:textSize="12sp"
+        android:textAllCaps="true"
+        android:letterSpacing="0.1"
+        android:paddingBottom="8dp"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnScanQr"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Scan QR with Camera"
+        android:textColor="#A78BFA"
+        app:strokeColor="#A78BFA"
+        app:cornerRadius="10dp"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnPickQrImage"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Pick QR Image from Gallery"
+        android:textColor="#A78BFA"
+        app:strokeColor="#A78BFA"
+        app:cornerRadius="10dp"/>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#2A2A4A"
+        android:layout_marginVertical="20dp"/>
+
+    <!-- Subscription -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Subscription URL"
+        android:textColor="#7C6FFF"
+        android:textSize="12sp"
+        android:textAllCaps="true"
+        android:letterSpacing="0.1"
+        android:paddingBottom="8dp"/>
+
+    <EditText
+        android:id="@+id/etSubName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Subscription name"
+        android:textColorHint="#555577"
+        android:textColor="#E0E0FF"
+        android:background="@drawable/bg_input"
+        android:padding="12dp"
+        android:singleLine="true"/>
+
+    <EditText
+        android:id="@+id/etSubUrl"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:hint="https://..."
+        android:textColorHint="#555577"
+        android:textColor="#E0E0FF"
+        android:background="@drawable/bg_input"
+        android:padding="12dp"
+        android:singleLine="true"
+        android:inputType="textUri"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnAddSubscription"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Add Subscription"
+        android:textColor="#FFFFFF"
+        app:backgroundTint="#7C6FFF"
+        app:cornerRadius="10dp"/>
+
+</LinearLayout>

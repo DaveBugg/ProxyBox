@@ -1,0 +1,274 @@
+package com.dave_cli.proxybox.core
+
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
+import android.net.VpnService
+import android.os.Build
+import android.os.ParcelFileDescriptor
+import android.util.Log
+import androidx.core.app.NotificationCompat
+import com.dave_cli.proxybox.R
+import com.dave_cli.proxybox.data.db.AppDatabase
+import com.dave_cli.proxybox.data.db.ProfileEntity
+import com.dave_cli.proxybox.ui.main.MainActivity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+
+class CoreService : VpnService() {
+
+    enum class VpnState { DISCONNECTED, CONNECTING, CONNECTED, ERROR }
+
+    companion object {
+        const val TAG = "CoreService"
+        const val CHANNEL_ID = "proxybox_vpn"
+        const val NOTIF_ID = 1
+
+        const val ACTION_START = "com.dave_cli.proxybox.START"
+        const val ACTION_STOP = "com.dave_cli.proxybox.STOP"
+
+        private const val PRIVATE_VLAN4_CLIENT = "26.26.26.1"
+        private const val PRIVATE_VLAN4_ROUTER = "26.26.26.2"
+        private const val TUN_MTU = 9000
+
+        private val _vpnState = MutableStateFlow(VpnState.DISCONNECTED)
+        val vpnState: StateFlow<VpnState> = _vpnState.asStateFlow()
+
+        val isActive: Boolean get() = _vpnState.value == VpnState.CONNECTED
+
+        var activeProfileName: String? = null
+            private set
+    }
+
+    private val job = SupervisorJob()
+    private val scope = CoroutineScope(Dispatchers.IO + job)
+
+    private var tunInterface: ParcelFileDescriptor? = null
+    private val engine: ProxyEngine = XrayManager
+
+    private val connectivity by lazy {
+        getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
+    }
+
+    private val defaultNetworkRequest by lazy {
+        NetworkRequest.Builder()
+            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED)
+            .build()
+    }
+
+    private val defaultNetworkCallback by lazy {
+        object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                setUnderlyingNetworks(arrayOf(network))
+            }
+
+            override fun onCapabilitiesChanged(
+                network: Network,
+                networkCapabilities: NetworkCapabilities
+            ) {
+                setUnderlyingNetworks(arrayOf(network))
+            }
+
+            override fun onLost(network: Network) {
+                setUnderlyingNetworks(null)
+            }
+        }
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        when (intent?.action) {
+            ACTION_STOP -> {
+                stopConnection()
+                stopSelf()
+                return START_NOT_STICKY
+            }
+            else -> startConnection()
+        }
+        return START_STICKY
+    }
+
+    private fun startConnection() {
+        _vpnState.value = VpnState.CONNECTING
+        scope.launch {
+            try {
+                val db = AppDatabase.getInstance(applicationContext)
+                val profile = db.profileDao().getSelectedProfile()
+                if (profile == null) {
+                    Log.e(TAG, "No selected profile, stopping service")
+                    _vpnState.value = VpnState.ERROR
+                    stopSelf()
+                    return@launch
+                }
+
+                val tun = setupTunInterface()
+                if (tun == null) {
+                    Log.e(TAG, "Failed to create TUN interface")
+                    _vpnState.value = VpnState.ERROR
+                    stopSelf()
+                    return@launch
+                }
+                tunInterface = tun
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    try {
+                        connectivity.requestNetwork(defaultNetworkRequest, defaultNetworkCallback)
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed to request default network callback", e)
+                    }
+                }
+
+                val configJson = ConfigBuilder.build(profile)
+                Log.d(TAG, "Starting engine with config length: ${configJson.length}")
+
+                val tunFd = tun.fd
+                val useTun2Socks = Tun2SocksManager.isAvailable()
+                Log.i(TAG, "tun2socks available: $useTun2Socks")
+
+                val coreTunFd = if (useTun2Socks) 0 else tunFd
+                val ok = if (engine is XrayManager) {
+                    engine.start(configJson, this@CoreService, coreTunFd)
+                } else {
+                    engine.start(configJson, this@CoreService)
+                }
+                if (!ok) {
+                    Log.e(TAG, "Engine failed to start")
+                    tunInterface?.close()
+                    tunInterface = null
+                    _vpnState.value = VpnState.ERROR
+                    stopSelf()
+                } else {
+                    if (useTun2Socks) {
+                        Tun2SocksManager.start(applicationContext, tunFd)
+                    }
+
+                    activeProfileName = profile.name
+                    startForeground(NOTIF_ID, buildNotification(profile))
+                    _vpnState.value = VpnState.CONNECTED
+                    Log.i(TAG, "CoreService started with profile: ${profile.name}")
+
+                    val prefs = getSharedPreferences("proxybox_prefs", Context.MODE_PRIVATE)
+                    prefs.edit().putBoolean("auto_start", true).apply()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error starting connection", e)
+                _vpnState.value = VpnState.ERROR
+                stopSelf()
+            }
+        }
+    }
+
+    private fun setupTunInterface(): ParcelFileDescriptor? {
+        return try {
+            val builder = Builder()
+                .setBlocking(false)
+                .setSession("ProxyBox")
+                .setMtu(TUN_MTU)
+                .addAddress(PRIVATE_VLAN4_CLIENT, 30)
+                .addRoute("0.0.0.0", 0)
+                .addDnsServer("1.1.1.1")
+                .addDnsServer("8.8.8.8")
+                .addDisallowedApplication(packageName)
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                builder.setMetered(false)
+            }
+
+            builder.establish()
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to establish TUN", e)
+            null
+        }
+    }
+
+    private fun stopConnection() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            try {
+                connectivity.unregisterNetworkCallback(defaultNetworkCallback)
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to unregister network callback", e)
+            }
+        }
+
+        Tun2SocksManager.stop()
+        engine.stop()
+        tunInterface?.close()
+        tunInterface = null
+        activeProfileName = null
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        } else {
+            @Suppress("DEPRECATION")
+            stopForeground(true)
+        }
+        _vpnState.value = VpnState.DISCONNECTED
+
+        val prefs = getSharedPreferences("proxybox_prefs", Context.MODE_PRIVATE)
+        prefs.edit().putBoolean("auto_start", false).apply()
+
+        Log.i(TAG, "CoreService stopped")
+    }
+
+    override fun onRevoke() {
+        stopConnection()
+        stopSelf()
+        super.onRevoke()
+    }
+
+    override fun onDestroy() {
+        stopConnection()
+        job.cancel()
+        super.onDestroy()
+    }
+
+    // ─── Notification ────────────────────────────────────────────────────────
+
+    private fun buildNotification(profile: ProfileEntity): Notification {
+        createChannel()
+
+        val mainIntent = Intent(this, MainActivity::class.java)
+        val contentPi = PendingIntent.getActivity(
+            this, 0, mainIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val stopIntent = Intent(this, CoreService::class.java).apply { action = ACTION_STOP }
+        val stopPi = PendingIntent.getService(
+            this, 1, stopIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_vpn_key)
+            .setContentTitle("ProxyBox — Connected")
+            .setContentText("${profile.name} (${profile.protocol.uppercase()})")
+            .setContentIntent(contentPi)
+            .addAction(R.drawable.ic_stop, "Disconnect", stopPi)
+            .setOngoing(true)
+            .build()
+    }
+
+    private fun createChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                "VPN Connection",
+                NotificationManager.IMPORTANCE_LOW
+            )
+            (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
+                .createNotificationChannel(channel)
+        }
+    }
+}

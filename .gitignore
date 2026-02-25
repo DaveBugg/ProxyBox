@@ -1,0 +1,55 @@
+# Built outputs
+*.iml
+.gradle/
+/build/
+/app/build/
+/captures/
+
+# Release APKs / bundles
+/app/release/
+*.apk
+*.aab
+*.ap_
+
+# Compiled
+*.class
+*.dex
+
+# Local configuration
+local.properties
+
+# IDE
+/.idea/
+
+# Cursor IDE
+/.cursor/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Native build
+.externalNativeBuild/
+.cxx/
+
+# Keystore (never commit signing keys)
+*.jks
+*.keystore
+
+# Heap dumps & crash logs
+*.hprof
+hs_err_pid*
+
+# Build logs
+build_out.txt
+*.log
+
+# Agent transcripts & Cursor state
+/agent-transcripts/
+/terminals/
+/mcps/
+
+# Plan files
+*.plan.md
+/implementation_plan*
