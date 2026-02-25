@@ -159,6 +159,17 @@
                     android:textColor="#F59E0B"
                     android:focusable="true"/>
 
+                <Button
+                    android:id="@+id/btnUpdateGeo"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="8dp"
+                    android:text="Update Geo DB"
+                    android:textSize="13sp"
+                    android:background="@drawable/tv_btn_focus"
+                    android:textColor="#60A5FA"
+                    android:focusable="true"/>
+
             </LinearLayout>
         </ScrollView>
 

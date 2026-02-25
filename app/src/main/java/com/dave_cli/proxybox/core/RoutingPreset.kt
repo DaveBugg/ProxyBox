@@ -14,6 +14,7 @@ data class RoutingPreset(
 data class IpCheckService(
     val name: String,
     val url: String,
+    val fallbackUrls: List<String> = emptyList(),
     val isRegional: Boolean = false
 )
 
@@ -39,7 +40,15 @@ object RoutingPresets {
             regionDnsDomains = listOf("geosite:category-ru"),
             ipCheckServices = listOf(
                 GLOBAL_IP_CHECK,
-                IpCheckService("2ip.ru", "https://2ip.ru/", isRegional = true)
+                IpCheckService(
+                    name = "RU regional",
+                    url = "https://internet-lab.ru/ip",
+                    fallbackUrls = listOf(
+                        "https://2ip.ru/",
+                        "https://2ip.me/"
+                    ),
+                    isRegional = true
+                )
             )
         ),
         RoutingPreset(

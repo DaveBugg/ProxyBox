@@ -8,8 +8,8 @@
     android:padding="16dp"
     android:background="@drawable/tv_item_focus"
     android:focusable="true"
-    android:focusableInTouchMode="true"
-    android:gravity="center_vertical">
+    android:gravity="center_vertical"
+    android:descendantFocusability="blocksDescendants">
 
     <!-- Selection indicator -->
     <View

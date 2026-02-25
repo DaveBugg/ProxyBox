@@ -52,20 +52,28 @@ class TvMainActivity : FragmentActivity() {
 
         viewModel = ViewModelProvider(this)[MainViewModel::class.java]
 
-        adapter = TvProfileAdapter(this) { profile ->
-            viewModel.selectProfile(profile.id)
-            if (CoreService.isActive) {
-                reconnectVpn()
-            }
-        }
+        adapter = TvProfileAdapter(this)
 
-        binding.lvProfiles.adapter = adapter
-        binding.lvProfiles.setOnItemClickListener { _, _, pos, _ ->
-            adapter.getItem(pos)?.let { profile ->
-                viewModel.selectProfile(profile.id)
-                if (CoreService.isActive) {
-                    reconnectVpn()
+        binding.lvProfiles.apply {
+            this.adapter = this@TvMainActivity.adapter
+            isFocusable = true
+            isFocusableInTouchMode = false
+            itemsCanFocus = false
+
+            setOnItemClickListener { _, _, pos, _ ->
+                this@TvMainActivity.adapter.getItem(pos)?.let { profile ->
+                    viewModel.selectProfile(profile.id)
+                    if (CoreService.isActive) {
+                        reconnectVpn()
+                    }
                 }
+            }
+
+            setOnItemLongClickListener { _, _, pos, _ ->
+                this@TvMainActivity.adapter.getItem(pos)?.let { profile ->
+                    showDeleteDialog(profile.name, pos)
+                }
+                true
             }
         }
 
@@ -105,6 +113,20 @@ class TvMainActivity : FragmentActivity() {
 
         observeProfiles()
         observeVpnState()
+    }
+
+    private fun showDeleteDialog(name: String, position: Int) {
+        AlertDialog.Builder(this)
+            .setTitle("Delete Profile")
+            .setMessage("Delete \"$name\"?")
+            .setPositiveButton("Delete") { _, _ ->
+                adapter.getItem(position)?.let { profile ->
+                    viewModel.deleteProfile(profile)
+                    Toast.makeText(this, "Deleted: ${profile.name}", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun setupPresetSpinner() {
@@ -161,6 +183,23 @@ class TvMainActivity : FragmentActivity() {
             viewModel.checkIp()
             showIpCheckDialog()
         }
+
+        binding.btnUpdateGeo.setOnClickListener {
+            binding.btnUpdateGeo.isEnabled = false
+            viewModel.updateGeoFiles { result ->
+                Toast.makeText(this, result, Toast.LENGTH_SHORT).show()
+                binding.btnUpdateGeo.text = "Update Geo DB"
+                binding.btnUpdateGeo.isEnabled = true
+            }
+        }
+
+        lifecycleScope.launch {
+            viewModel.geoProgress.collect { progress ->
+                if (progress.isNotEmpty()) {
+                    binding.btnUpdateGeo.text = progress
+                }
+            }
+        }
     }
 
     private fun showIpCheckDialog() {
@@ -195,10 +234,18 @@ class TvMainActivity : FragmentActivity() {
     private fun observeProfiles() {
         lifecycleScope.launch {
             viewModel.profiles.collect { profiles ->
+                val focusedPos = binding.lvProfiles.selectedItemPosition
                 adapter.clear()
                 adapter.addAll(profiles)
                 adapter.notifyDataSetChanged()
                 binding.tvEmpty.visibility = if (profiles.isEmpty()) View.VISIBLE else View.GONE
+
+                if (profiles.isNotEmpty() && focusedPos >= 0) {
+                    val safePos = focusedPos.coerceAtMost(profiles.size - 1)
+                    binding.lvProfiles.post {
+                        binding.lvProfiles.setSelection(safePos)
+                    }
+                }
             }
         }
     }

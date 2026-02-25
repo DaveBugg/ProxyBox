@@ -114,6 +114,51 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    // ─── Geo Update ────────────────────────────────────────────────────
+
+    private val _isUpdatingGeo = MutableStateFlow(false)
+    val isUpdatingGeo: StateFlow<Boolean> = _isUpdatingGeo.asStateFlow()
+
+    private val _geoProgress = MutableStateFlow("")
+    val geoProgress: StateFlow<String> = _geoProgress.asStateFlow()
+
+    fun updateGeoFiles(onResult: (String) -> Unit) {
+        if (_isUpdatingGeo.value) return
+        _isUpdatingGeo.value = true
+        _geoProgress.value = "Connecting..."
+        viewModelScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                try {
+                    val updated = com.dave_cli.proxybox.core.GeoFileManager.updateAll(
+                        getApplication()
+                    ) { fileName, bytesRead, totalBytes ->
+                        val label = if (fileName == "geoip.dat") "GeoIP" else "GeoSite"
+                        val text = when {
+                            bytesRead == -1L -> "$label: verifying..."
+                            totalBytes > 0 -> {
+                                val pct = (bytesRead * 100 / totalBytes).toInt()
+                                val mb = "%.1f".format(bytesRead / 1_048_576.0)
+                                val totalMb = "%.1f".format(totalBytes / 1_048_576.0)
+                                "$label: $mb / $totalMb MB ($pct%)"
+                            }
+                            else -> {
+                                val mb = "%.1f".format(bytesRead / 1_048_576.0)
+                                "$label: ${mb} MB"
+                            }
+                        }
+                        _geoProgress.value = text
+                    }
+                    if (updated) "Geo files updated" else "Already up to date"
+                } catch (e: Exception) {
+                    "Update failed: ${e.message}"
+                }
+            }
+            _geoProgress.value = ""
+            _isUpdatingGeo.value = false
+            onResult(result)
+        }
+    }
+
     // ─── Routing Presets ─────────────────────────────────────────────────
 
     private fun loadActivePreset(): RoutingPreset {
@@ -147,31 +192,37 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private fun fetchIp(service: IpCheckService): IpCheckResult {
-        return try {
-            val url = URL(service.url)
-            val conn = url.openConnection() as HttpURLConnection
-            conn.connectTimeout = 8000
-            conn.readTimeout = 8000
-            conn.requestMethod = "GET"
-            conn.setRequestProperty("User-Agent", "ProxyBox/1.0")
-            conn.instanceFollowRedirects = true
-            val code = conn.responseCode
-            if (code !in 200..399) {
-                conn.disconnect()
-                return IpCheckResult(service.name, null, "HTTP $code", service.isRegional)
-            }
-            val body = conn.inputStream.bufferedReader().readText().trim()
-            conn.disconnect()
+        val urls = listOf(service.url) + service.fallbackUrls
+        var lastError: String = "No URLs"
 
-            val ip = extractIp(body)
-            if (ip != null) {
-                IpCheckResult(service.name, ip, null, service.isRegional)
-            } else {
-                IpCheckResult(service.name, null, "Could not parse IP", service.isRegional)
+        for (urlStr in urls) {
+            try {
+                val conn = URL(urlStr).openConnection() as HttpURLConnection
+                conn.connectTimeout = 6000
+                conn.readTimeout = 6000
+                conn.requestMethod = "GET"
+                conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android) ProxyBox/1.0")
+                conn.instanceFollowRedirects = true
+                val code = conn.responseCode
+                if (code !in 200..399) {
+                    conn.disconnect()
+                    lastError = "HTTP $code ($urlStr)"
+                    continue
+                }
+                val body = conn.inputStream.bufferedReader().readText().trim()
+                conn.disconnect()
+
+                val ip = extractIp(body)
+                if (ip != null) {
+                    return IpCheckResult(service.name, ip, null, service.isRegional)
+                }
+                lastError = "Could not parse IP ($urlStr)"
+            } catch (e: Exception) {
+                lastError = "${e.javaClass.simpleName}: ${e.message}"
             }
-        } catch (e: Exception) {
-            IpCheckResult(service.name, null, e.message ?: "Error", service.isRegional)
         }
+
+        return IpCheckResult(service.name, null, lastError, service.isRegional)
     }
 
     private val ipRegex = Regex("""\b(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\b""")

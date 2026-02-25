@@ -11,8 +11,7 @@ import com.dave_cli.proxybox.R
 import com.dave_cli.proxybox.data.db.ProfileEntity
 
 class TvProfileAdapter(
-    context: Context,
-    private val onClick: (ProfileEntity) -> Unit
+    context: Context
 ) : ArrayAdapter<ProfileEntity>(context, R.layout.item_tv_profile) {
 
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
@@ -49,7 +48,6 @@ class TvProfileAdapter(
             badge.visibility = View.GONE
         }
 
-        view.setOnClickListener { onClick(item) }
         return view
     }
 }

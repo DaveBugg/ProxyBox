@@ -12,6 +12,8 @@ import java.io.FileOutputStream
 import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
 
+typealias ProgressCallback = (fileName: String, bytesRead: Long, totalBytes: Long) -> Unit
+
 object GeoFileManager {
 
     private const val TAG = "GeoFileManager"
@@ -32,15 +34,18 @@ object GeoFileManager {
         .followSslRedirects(true)
         .build()
 
-    suspend fun updateAll(context: Context): Boolean = withContext(Dispatchers.IO) {
+    suspend fun updateAll(
+        context: Context,
+        onProgress: ProgressCallback? = null
+    ): Boolean = withContext(Dispatchers.IO) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val assetsDir = context.getDir("assets", Context.MODE_PRIVATE)
 
         val geoipUpdated = downloadIfNew(
-            assetsDir, GEOIP_URL, GEOIP_SHA256_URL, "geoip.dat", prefs
+            assetsDir, GEOIP_URL, GEOIP_SHA256_URL, "geoip.dat", prefs, onProgress
         )
         val geositeUpdated = downloadIfNew(
-            assetsDir, GEOSITE_URL, GEOSITE_SHA256_URL, "geosite.dat", prefs
+            assetsDir, GEOSITE_URL, GEOSITE_SHA256_URL, "geosite.dat", prefs, onProgress
         )
 
         if (geoipUpdated || geositeUpdated) {
@@ -61,7 +66,8 @@ object GeoFileManager {
         url: String,
         sha256Url: String,
         targetFileName: String,
-        prefs: SharedPreferences
+        prefs: SharedPreferences,
+        onProgress: ProgressCallback? = null
     ): Boolean {
         val etagKey = "etag_$targetFileName"
         val savedEtag = prefs.getString(etagKey, null)
@@ -85,11 +91,19 @@ object GeoFileManager {
             return false
         }
 
+        val contentLength = response.body?.contentLength() ?: -1L
         val tmpFile = File(destDir, "$targetFileName.tmp")
         try {
             response.body?.byteStream()?.use { input ->
                 FileOutputStream(tmpFile).use { output ->
-                    input.copyTo(output, bufferSize = 8192)
+                    val buffer = ByteArray(8192)
+                    var totalRead = 0L
+                    var bytesRead: Int
+                    while (input.read(buffer).also { bytesRead = it } != -1) {
+                        output.write(buffer, 0, bytesRead)
+                        totalRead += bytesRead
+                        onProgress?.invoke(targetFileName, totalRead, contentLength)
+                    }
                 }
             } ?: run {
                 response.close()
@@ -101,6 +115,8 @@ object GeoFileManager {
                 tmpFile.delete()
                 return false
             }
+
+            onProgress?.invoke(targetFileName, -1, -1) // signal: verifying
 
             val expectedHash = fetchSha256Hash(sha256Url)
             if (expectedHash != null && !verifySha256(tmpFile, expectedHash)) {
@@ -142,7 +158,6 @@ object GeoFileManager {
                 return null
             }
             val body = response.body?.string() ?: return null
-            // Format: "<hash>  <filename>" or just "<hash>"
             body.trim().split("\\s+".toRegex()).firstOrNull()?.lowercase()
         } catch (e: Exception) {
             Log.w(TAG, "Failed to fetch SHA256: ${e.message}")

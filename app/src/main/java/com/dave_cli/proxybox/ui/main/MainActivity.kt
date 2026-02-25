@@ -166,6 +166,23 @@ class MainActivity : AppCompatActivity() {
             showIpCheckDialog()
         }
 
+        binding.btnUpdateGeo.setOnClickListener {
+            binding.btnUpdateGeo.isEnabled = false
+            viewModel.updateGeoFiles { result ->
+                Toast.makeText(this, result, Toast.LENGTH_SHORT).show()
+                binding.btnUpdateGeo.text = "Update Geo"
+                binding.btnUpdateGeo.isEnabled = true
+            }
+        }
+
+        lifecycleScope.launch {
+            viewModel.geoProgress.collect { progress ->
+                if (progress.isNotEmpty()) {
+                    binding.btnUpdateGeo.text = progress
+                }
+            }
+        }
+
         lifecycleScope.launch {
             viewModel.isPinging.collect { pinging ->
                 binding.btnPingAll.isEnabled = !pinging
