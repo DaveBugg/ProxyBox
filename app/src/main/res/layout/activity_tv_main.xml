@@ -45,7 +45,9 @@
                 android:divider="#222"
                 android:dividerHeight="1dp"
                 android:drawSelectorOnTop="false"
-                android:listSelector="@android:color/transparent"/>
+                android:listSelector="@android:color/transparent"
+                android:focusable="true"
+                android:nextFocusRight="@id/btnConnect"/>
 
             <TextView
                 android:id="@+id/tvEmpty"
@@ -64,7 +66,8 @@
             android:layout_height="match_parent"
             android:fillViewport="true"
             android:scrollbars="none"
-            android:background="#1A1A2E">
+            android:background="#1A1A2E"
+            android:focusable="false">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -91,7 +94,8 @@
                     android:layout_marginBottom="10dp"
                     android:backgroundTint="#7C6FFF"
                     android:textColor="#FFF"
-                    android:focusable="true"/>
+                    android:focusable="true"
+                    android:nextFocusLeft="@id/lvProfiles"/>
 
                 <Button
                     android:id="@+id/btnAddConfig"
@@ -101,7 +105,8 @@
                     android:textSize="13sp"
                     android:background="@drawable/tv_btn_focus"
                     android:textColor="#E0E0FF"
-                    android:focusable="true"/>
+                    android:focusable="true"
+                    android:nextFocusLeft="@id/lvProfiles"/>
 
                 <Button
                     android:id="@+id/btnPingAll"
@@ -112,7 +117,8 @@
                     android:textSize="13sp"
                     android:background="@drawable/tv_btn_focus"
                     android:textColor="#A78BFA"
-                    android:focusable="true"/>
+                    android:focusable="true"
+                    android:nextFocusLeft="@id/lvProfiles"/>
 
                 <Button
                     android:id="@+id/btnTestConnection"
@@ -123,7 +129,8 @@
                     android:textSize="13sp"
                     android:background="@drawable/tv_btn_focus"
                     android:textColor="#4ADE80"
-                    android:focusable="true"/>
+                    android:focusable="true"
+                    android:nextFocusLeft="@id/lvProfiles"/>
 
                 <View
                     android:layout_width="match_parent"
@@ -146,7 +153,8 @@
                     android:layout_height="44dp"
                     android:background="@drawable/tv_btn_focus"
                     android:popupBackground="#2A2A4A"
-                    android:focusable="true"/>
+                    android:focusable="true"
+                    android:nextFocusLeft="@id/lvProfiles"/>
 
                 <Button
                     android:id="@+id/btnIpCheck"
@@ -157,7 +165,8 @@
                     android:textSize="14sp"
                     android:background="@drawable/tv_btn_focus"
                     android:textColor="#F59E0B"
-                    android:focusable="true"/>
+                    android:focusable="true"
+                    android:nextFocusLeft="@id/lvProfiles"/>
 
                 <Button
                     android:id="@+id/btnUpdateGeo"
@@ -168,7 +177,8 @@
                     android:textSize="13sp"
                     android:background="@drawable/tv_btn_focus"
                     android:textColor="#60A5FA"
-                    android:focusable="true"/>
+                    android:focusable="true"
+                    android:nextFocusLeft="@id/lvProfiles"/>
 
             </LinearLayout>
         </ScrollView>

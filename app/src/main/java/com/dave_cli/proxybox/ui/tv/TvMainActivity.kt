@@ -52,29 +52,23 @@ class TvMainActivity : FragmentActivity() {
 
         viewModel = ViewModelProvider(this)[MainViewModel::class.java]
 
-        adapter = TvProfileAdapter(this)
+        adapter = TvProfileAdapter(
+            context = this,
+            onClick = { profile ->
+                viewModel.selectProfile(profile.id)
+                if (CoreService.isActive) {
+                    reconnectVpn()
+                }
+            },
+            onLongClick = { profile, _ ->
+                showDeleteDialog(profile.name, profile)
+            }
+        )
 
         binding.lvProfiles.apply {
             this.adapter = this@TvMainActivity.adapter
-            isFocusable = true
-            isFocusableInTouchMode = false
-            itemsCanFocus = false
-
-            setOnItemClickListener { _, _, pos, _ ->
-                this@TvMainActivity.adapter.getItem(pos)?.let { profile ->
-                    viewModel.selectProfile(profile.id)
-                    if (CoreService.isActive) {
-                        reconnectVpn()
-                    }
-                }
-            }
-
-            setOnItemLongClickListener { _, _, pos, _ ->
-                this@TvMainActivity.adapter.getItem(pos)?.let { profile ->
-                    showDeleteDialog(profile.name, pos)
-                }
-                true
-            }
+            itemsCanFocus = true
+            descendantFocusability = android.view.ViewGroup.FOCUS_AFTER_DESCENDANTS
         }
 
         binding.btnConnect.setOnClickListener {
@@ -115,15 +109,13 @@ class TvMainActivity : FragmentActivity() {
         observeVpnState()
     }
 
-    private fun showDeleteDialog(name: String, position: Int) {
+    private fun showDeleteDialog(name: String, profile: com.dave_cli.proxybox.data.db.ProfileEntity) {
         AlertDialog.Builder(this)
             .setTitle("Delete Profile")
             .setMessage("Delete \"$name\"?")
             .setPositiveButton("Delete") { _, _ ->
-                adapter.getItem(position)?.let { profile ->
-                    viewModel.deleteProfile(profile)
-                    Toast.makeText(this, "Deleted: ${profile.name}", Toast.LENGTH_SHORT).show()
-                }
+                viewModel.deleteProfile(profile)
+                Toast.makeText(this, "Deleted: ${profile.name}", Toast.LENGTH_SHORT).show()
             }
             .setNegativeButton("Cancel", null)
             .show()

@@ -11,7 +11,9 @@ import com.dave_cli.proxybox.R
 import com.dave_cli.proxybox.data.db.ProfileEntity
 
 class TvProfileAdapter(
-    context: Context
+    context: Context,
+    private val onClick: (ProfileEntity) -> Unit,
+    private val onLongClick: (ProfileEntity, Int) -> Unit
 ) : ArrayAdapter<ProfileEntity>(context, R.layout.item_tv_profile) {
 
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
@@ -46,6 +48,12 @@ class TvProfileAdapter(
         } else {
             indicator.visibility = View.GONE
             badge.visibility = View.GONE
+        }
+
+        view.setOnClickListener { onClick(item) }
+        view.setOnLongClickListener {
+            onLongClick(item, position)
+            true
         }
 
         return view
