@@ -6,9 +6,9 @@
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:padding="16dp"
-    android:background="?android:attr/selectableItemBackground"
+    android:background="@drawable/tv_item_focus"
     android:focusable="true"
-    android:focusableInTouchMode="false"
+    android:focusableInTouchMode="true"
     android:gravity="center_vertical">
 
     <!-- Selection indicator -->

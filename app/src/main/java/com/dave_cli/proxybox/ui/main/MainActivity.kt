@@ -6,6 +6,10 @@ import android.content.res.Configuration
 import android.net.VpnService
 import android.os.Bundle
 import android.view.View
+import android.view.ViewGroup
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -16,6 +20,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.dave_cli.proxybox.R
 import com.dave_cli.proxybox.core.CoreService
 import com.dave_cli.proxybox.core.CoreService.VpnState
+import com.dave_cli.proxybox.core.RoutingPresets
 import com.dave_cli.proxybox.databinding.ActivityMainBinding
 import com.dave_cli.proxybox.ui.add.AddProfileActivity
 import com.dave_cli.proxybox.ui.server.LocalServerActivity
@@ -48,6 +53,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         setupRecyclerView()
+        setupPresetSpinner()
         setupButtons()
         observeProfiles()
         observeVpnState()
@@ -71,6 +77,55 @@ class MainActivity : AppCompatActivity() {
         )
         binding.rvProfiles.layoutManager = LinearLayoutManager(this)
         binding.rvProfiles.adapter = adapter
+    }
+
+    private fun setupPresetSpinner() {
+        val presets = RoutingPresets.ALL
+        val spinnerAdapter = object : ArrayAdapter<String>(
+            this, android.R.layout.simple_spinner_item,
+            presets.map { it.displayName }
+        ) {
+            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view = super.getView(position, convertView, parent)
+                (view as TextView).apply {
+                    setTextColor(0xFFE0E0FF.toInt())
+                    textSize = 13f
+                }
+                return view
+            }
+
+            override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view = super.getDropDownView(position, convertView, parent)
+                (view as TextView).apply {
+                    setTextColor(0xFFE0E0FF.toInt())
+                    setBackgroundColor(0xFF1A1A2E.toInt())
+                    setPadding(24, 20, 24, 20)
+                }
+                return view
+            }
+        }
+        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        binding.spinnerPreset.adapter = spinnerAdapter
+
+        val activeIdx = presets.indexOfFirst { it.id == viewModel.activePreset.value.id }
+        if (activeIdx >= 0) binding.spinnerPreset.setSelection(activeIdx, false)
+
+        binding.spinnerPreset.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, v: View?, pos: Int, id: Long) {
+                val selected = presets[pos]
+                if (selected.id != viewModel.activePreset.value.id) {
+                    viewModel.setActivePreset(selected)
+                    if (CoreService.isActive) {
+                        Toast.makeText(
+                            this@MainActivity,
+                            "Reconnect VPN to apply preset",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
     }
 
     private fun setupButtons() {
@@ -106,10 +161,44 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        binding.btnIpCheck.setOnClickListener {
+            viewModel.checkIp()
+            showIpCheckDialog()
+        }
+
         lifecycleScope.launch {
             viewModel.isPinging.collect { pinging ->
                 binding.btnPingAll.isEnabled = !pinging
                 binding.btnPingAll.text = if (pinging) "Pinging..." else "Ping All"
+            }
+        }
+    }
+
+    private fun showIpCheckDialog() {
+        val dialogView = layoutInflater.inflate(android.R.layout.simple_list_item_1, null)
+        val tv = dialogView as TextView
+        tv.text = "Checking..."
+        tv.setTextColor(0xFFE0E0FF.toInt())
+        tv.setPadding(48, 32, 48, 32)
+        tv.textSize = 14f
+
+        AlertDialog.Builder(this)
+            .setTitle("IP Check — ${viewModel.activePreset.value.displayName}")
+            .setView(tv)
+            .setPositiveButton("Close", null)
+            .show()
+
+        lifecycleScope.launch {
+            viewModel.ipCheckResults.collect { results ->
+                if (results.isNotEmpty()) {
+                    val sb = StringBuilder()
+                    for (r in results) {
+                        val label = if (r.isRegional) "\uD83C\uDFE0 ${r.serviceName}" else "\uD83C\uDF10 ${r.serviceName}"
+                        val value = r.ip ?: r.error ?: "—"
+                        sb.appendLine("$label\n  $value\n")
+                    }
+                    tv.text = sb.toString().trim()
+                }
             }
         }
     }

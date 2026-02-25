@@ -8,7 +8,9 @@ object ConfigBuilder {
 
     private val gson = Gson()
 
-    fun build(profile: ProfileEntity): String {
+    fun build(profile: ProfileEntity, preset: RoutingPreset? = null): String {
+        val activePreset = preset ?: RoutingPresets.findById("global")
+
         val outbound = try {
             gson.fromJson(profile.configJson, JsonObject::class.java)
         } catch (e: Exception) {
@@ -67,43 +69,88 @@ object ConfigBuilder {
                 )
             )))
 
-            add("dns", gson.toJsonTree(mapOf(
-                "hosts" to mapOf(
-                    "domain:googleapis.cn" to "googleapis.com"
-                ),
-                "servers" to listOf(
-                    mapOf(
-                        "address" to "https+local://1.1.1.1/dns-query",
-                        "domains" to listOf<String>()
-                    ),
-                    "1.1.1.1",
-                    "8.8.8.8",
-                    "localhost"
-                )
-            )))
-
-            add("routing", gson.toJsonTree(mapOf(
-                "domainStrategy" to "IPIfNonMatch",
-                "rules" to listOf(
-                    mapOf(
-                        "type" to "field",
-                        "port" to "53",
-                        "outboundTag" to "dns-out"
-                    ),
-                    mapOf(
-                        "type" to "field",
-                        "outboundTag" to "direct",
-                        "ip" to listOf("geoip:private")
-                    ),
-                    mapOf(
-                        "type" to "field",
-                        "port" to "0-65535",
-                        "outboundTag" to "proxy"
-                    )
-                )
-            )))
+            add("dns", buildDns(activePreset))
+            add("routing", buildRouting(activePreset))
         }
 
         return config.toString()
+    }
+
+    private fun buildDns(preset: RoutingPreset): com.google.gson.JsonElement {
+        val servers = mutableListOf<Any>()
+
+        servers.add(mapOf(
+            "address" to "https+local://1.1.1.1/dns-query",
+            "domains" to emptyList<String>()
+        ))
+
+        if (preset.regionDns != null && preset.regionDnsDomains.isNotEmpty()) {
+            servers.add(mapOf(
+                "address" to preset.regionDns,
+                "domains" to preset.regionDnsDomains
+            ))
+        }
+
+        servers.add("1.1.1.1")
+        servers.add("8.8.8.8")
+        servers.add("localhost")
+
+        return gson.toJsonTree(mapOf(
+            "hosts" to mapOf(
+                "domain:googleapis.cn" to "googleapis.com"
+            ),
+            "servers" to servers
+        ))
+    }
+
+    private fun buildRouting(preset: RoutingPreset): com.google.gson.JsonElement {
+        val rules = mutableListOf<Map<String, Any>>()
+
+        rules.add(mapOf(
+            "type" to "field",
+            "port" to "53",
+            "outboundTag" to "dns-out"
+        ))
+
+        rules.add(mapOf(
+            "type" to "field",
+            "outboundTag" to "direct",
+            "ip" to listOf("geoip:private")
+        ))
+
+        if (preset.directDomains.isNotEmpty()) {
+            rules.add(mapOf(
+                "type" to "field",
+                "outboundTag" to "direct",
+                "domain" to preset.directDomains
+            ))
+        }
+
+        if (preset.directIps.isNotEmpty()) {
+            rules.add(mapOf(
+                "type" to "field",
+                "outboundTag" to "direct",
+                "ip" to preset.directIps
+            ))
+        }
+
+        if (preset.blockDomains.isNotEmpty()) {
+            rules.add(mapOf(
+                "type" to "field",
+                "outboundTag" to "block",
+                "domain" to preset.blockDomains
+            ))
+        }
+
+        rules.add(mapOf(
+            "type" to "field",
+            "port" to "0-65535",
+            "outboundTag" to "proxy"
+        ))
+
+        return gson.toJsonTree(mapOf(
+            "domainStrategy" to "IPIfNonMatch",
+            "rules" to rules
+        ))
     }
 }

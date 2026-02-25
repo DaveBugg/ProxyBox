@@ -40,16 +40,13 @@ class TvProfileAdapter(
 
         val indicator = view.findViewById<View>(R.id.viewSelectedIndicator)
         val badge = view.findViewById<TextView>(R.id.tvSelectedBadge)
-        val root = view.findViewById<View>(R.id.profileRoot)
 
         if (item.isSelected) {
             indicator.visibility = View.VISIBLE
             badge.visibility = View.VISIBLE
-            root.setBackgroundColor(Color.parseColor("#1A7C6FFF"))
         } else {
             indicator.visibility = View.GONE
             badge.visibility = View.GONE
-            root.setBackgroundColor(Color.TRANSPARENT)
         }
 
         view.setOnClickListener { onClick(item) }

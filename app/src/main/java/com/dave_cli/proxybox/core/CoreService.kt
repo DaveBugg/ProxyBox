@@ -130,7 +130,12 @@ class CoreService : VpnService() {
                     }
                 }
 
-                val configJson = ConfigBuilder.build(profile)
+                val prefsBox = getSharedPreferences("proxybox_prefs", Context.MODE_PRIVATE)
+                val presetId = prefsBox.getString("active_preset", "global") ?: "global"
+                val preset = RoutingPresets.findById(presetId)
+                Log.i(TAG, "Using routing preset: ${preset.displayName}")
+
+                val configJson = ConfigBuilder.build(profile, preset)
                 Log.d(TAG, "Starting engine with config length: ${configJson.length}")
 
                 val tunFd = tun.fd

@@ -6,13 +6,19 @@ import android.content.res.Configuration
 import android.net.VpnService
 import android.os.Bundle
 import android.view.View
+import android.view.ViewGroup
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import android.app.AlertDialog
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.dave_cli.proxybox.core.CoreService
 import com.dave_cli.proxybox.core.CoreService.VpnState
+import com.dave_cli.proxybox.core.RoutingPresets
 import com.dave_cli.proxybox.databinding.ActivityTvMainBinding
 import com.dave_cli.proxybox.ui.main.MainActivity
 import com.dave_cli.proxybox.ui.main.MainViewModel
@@ -87,6 +93,9 @@ class TvMainActivity : FragmentActivity() {
             }
         }
 
+        setupPresetSpinner()
+        setupIpCheck()
+
         lifecycleScope.launch {
             viewModel.isPinging.collect { pinging ->
                 binding.btnPingAll.isEnabled = !pinging
@@ -96,6 +105,91 @@ class TvMainActivity : FragmentActivity() {
 
         observeProfiles()
         observeVpnState()
+    }
+
+    private fun setupPresetSpinner() {
+        val presets = RoutingPresets.ALL
+        val spinnerAdapter = object : ArrayAdapter<String>(
+            this, android.R.layout.simple_spinner_item,
+            presets.map { it.displayName }
+        ) {
+            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view = super.getView(position, convertView, parent)
+                (view as TextView).apply {
+                    setTextColor(0xFFE0E0FF.toInt())
+                    textSize = 14f
+                }
+                return view
+            }
+
+            override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view = super.getDropDownView(position, convertView, parent)
+                (view as TextView).apply {
+                    setTextColor(0xFFE0E0FF.toInt())
+                    setBackgroundColor(0xFF2A2A4A.toInt())
+                    setPadding(24, 20, 24, 20)
+                }
+                return view
+            }
+        }
+        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        binding.spinnerPreset.adapter = spinnerAdapter
+
+        val activeIdx = presets.indexOfFirst { it.id == viewModel.activePreset.value.id }
+        if (activeIdx >= 0) binding.spinnerPreset.setSelection(activeIdx, false)
+
+        binding.spinnerPreset.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, v: View?, pos: Int, id: Long) {
+                val selected = presets[pos]
+                if (selected.id != viewModel.activePreset.value.id) {
+                    viewModel.setActivePreset(selected)
+                    if (CoreService.isActive) {
+                        Toast.makeText(
+                            this@TvMainActivity,
+                            "Reconnect VPN to apply preset",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+    }
+
+    private fun setupIpCheck() {
+        binding.btnIpCheck.setOnClickListener {
+            viewModel.checkIp()
+            showIpCheckDialog()
+        }
+    }
+
+    private fun showIpCheckDialog() {
+        val tv = TextView(this).apply {
+            text = "Checking..."
+            setTextColor(0xFFE0E0FF.toInt())
+            setPadding(48, 32, 48, 32)
+            textSize = 16f
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("IP Check — ${viewModel.activePreset.value.displayName}")
+            .setView(tv)
+            .setPositiveButton("Close", null)
+            .show()
+
+        lifecycleScope.launch {
+            viewModel.ipCheckResults.collect { results ->
+                if (results.isNotEmpty()) {
+                    val sb = StringBuilder()
+                    for (r in results) {
+                        val label = if (r.isRegional) "Regional: ${r.serviceName}" else "Global: ${r.serviceName}"
+                        val value = r.ip ?: r.error ?: "—"
+                        sb.appendLine("$label\n  $value\n")
+                    }
+                    tv.text = sb.toString().trim()
+                }
+            }
+        }
     }
 
     private fun observeProfiles() {
