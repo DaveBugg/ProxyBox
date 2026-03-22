@@ -394,7 +394,7 @@ object ConfigParser {
                         if (wsHost.isNotEmpty()) addProperty("host", wsHost)
                     })
                 }
-                "splithttp" -> {
+                "splithttp", "xhttp" -> {
                     add("splithttpSettings", JsonObject().apply {
                         addProperty("path", path)
                         if (wsHost.isNotEmpty()) addProperty("host", wsHost)

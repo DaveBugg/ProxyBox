@@ -34,7 +34,7 @@ If you find this project useful, consider supporting development:
 ## Features
 
 - **Multi-protocol support**: VLESS, VMess, Shadowsocks, Trojan, Hysteria2
-- **Transport layers**: TCP, WebSocket, gRPC, HTTP/2, QUIC, KCP, HTTPUpgrade, SplitHTTP
+- **Transport layers**: TCP, WebSocket, gRPC, HTTP/2, QUIC, KCP, HTTPUpgrade, XHTTP (SplitHTTP)
 - **Security**: TLS, Reality, None
 - **Android TV optimized**: dedicated TV interface with D-pad navigation and Leanback launcher support
 - **Config import methods**:
