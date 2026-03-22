@@ -1,6 +1,13 @@
 # ProxyBox
 
+![API](https://img.shields.io/badge/API-24%2B-brightgreen)
+![License](https://img.shields.io/badge/License-GPLv3-blue)
+![GitHub release](https://img.shields.io/github/v/release/DaveBugg/ProxyBox)
+![Downloads](https://img.shields.io/github/downloads/DaveBugg/ProxyBox/total)
+
 Open-source Android VPN client powered by [Xray-core](https://github.com/XTLS/Xray-core). Designed for both **mobile phones** and **Android TV / set-top boxes**.
+
+> **Why ProxyBox?** Full Android TV support with D-pad navigation, phone-to-TV config transfer via QR code, and a clean modern UI — features missing from most Xray clients.
 
 ## Donate
 
@@ -9,6 +16,20 @@ If you find this project useful, consider supporting development:
 **USDT (TRC20):** `TMWTigPZgTkekaRUjUrhJUNENFeUAE7T15`
 
 <img src="docs/donate_usdt_trc20.png" alt="Donate USDT TRC20" width="200"/>
+
+## Screenshots
+
+<p align="center">
+  <img src="docs/Screenshot_20260322_170840.png" alt="Mobile UI" width="250"/>
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="docs/Screenshot_20260322_171025.png" alt="Android TV UI" width="420"/>
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="docs/Screenshot_20260322_171043.png" alt="Phone-to-TV Config Transfer" width="420"/>
+</p>
+
+<p align="center">
+  <em>Mobile &nbsp;·&nbsp; Android TV &nbsp;·&nbsp; Phone-to-TV Config Transfer</em>
+</p>
 
 ## Features
 
