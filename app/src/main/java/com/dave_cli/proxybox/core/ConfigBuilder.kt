@@ -61,7 +61,8 @@ object ConfigBuilder {
                 ),
                 mapOf(
                     "tag" to "block",
-                    "protocol" to "blackhole"
+                    "protocol" to "blackhole",
+                    "settings" to mapOf("response" to mapOf("type" to "http"))
                 ),
                 mapOf(
                     "tag" to "dns-out",
@@ -140,6 +141,13 @@ object ConfigBuilder {
                 "domain" to preset.blockDomains
             ))
         }
+
+        rules.add(mapOf(
+            "type" to "field",
+            "outboundTag" to "block",
+            "network" to "udp",
+            "port" to "443"
+        ))
 
         rules.add(mapOf(
             "type" to "field",

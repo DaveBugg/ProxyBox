@@ -19,7 +19,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.dave_cli.proxybox.core.CoreService
 import java.net.HttpURLConnection
+import java.net.InetSocketAddress
+import java.net.Proxy
 import java.net.URL
 
 class MainViewModel(app: Application) : AndroidViewModel(app) {
@@ -97,7 +100,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 try {
                     val start = System.currentTimeMillis()
                     val url = URL("https://www.google.com/generate_204")
-                    val conn = url.openConnection() as HttpURLConnection
+                    val conn = url.openConnection(vpnProxy()) as HttpURLConnection
                     conn.connectTimeout = 5000
                     conn.readTimeout = 5000
                     conn.requestMethod = "GET"
@@ -191,13 +194,20 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    private fun vpnProxy(): Proxy =
+        if (CoreService.isActive)
+            Proxy(Proxy.Type.SOCKS, InetSocketAddress("127.0.0.1", 10808))
+        else
+            Proxy.NO_PROXY
+
     private fun fetchIp(service: IpCheckService): IpCheckResult {
         val urls = listOf(service.url) + service.fallbackUrls
         var lastError: String = "No URLs"
+        val proxy = if (!service.isRegional) vpnProxy() else Proxy.NO_PROXY
 
         for (urlStr in urls) {
             try {
-                val conn = URL(urlStr).openConnection() as HttpURLConnection
+                val conn = URL(urlStr).openConnection(proxy) as HttpURLConnection
                 conn.connectTimeout = 6000
                 conn.readTimeout = 6000
                 conn.requestMethod = "GET"

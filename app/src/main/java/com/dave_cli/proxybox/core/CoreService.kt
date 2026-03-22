@@ -41,6 +41,7 @@ class CoreService : VpnService() {
 
         private const val PRIVATE_VLAN4_CLIENT = "26.26.26.1"
         private const val PRIVATE_VLAN4_ROUTER = "26.26.26.2"
+        private const val PRIVATE_VLAN6_CLIENT = "fd00::1"
         private const val TUN_MTU = 9000
 
         private val _vpnState = MutableStateFlow(VpnState.DISCONNECTED)
@@ -192,6 +193,8 @@ class CoreService : VpnService() {
                 .setMtu(TUN_MTU)
                 .addAddress(PRIVATE_VLAN4_CLIENT, 30)
                 .addRoute("0.0.0.0", 0)
+                .addAddress(PRIVATE_VLAN6_CLIENT, 128)
+                .addRoute("::", 0)
                 .addDnsServer("1.1.1.1")
                 .addDnsServer("8.8.8.8")
                 .addDisallowedApplication(packageName)
