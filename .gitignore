@@ -24,6 +24,10 @@ local.properties
 # Cursor IDE
 /.cursor/
 
+# AI tool configs
+/.claude/
+/.serena/
+
 # OS
 .DS_Store
 Thumbs.db

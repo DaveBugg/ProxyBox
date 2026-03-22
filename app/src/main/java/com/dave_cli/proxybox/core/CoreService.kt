@@ -95,7 +95,10 @@ class CoreService : VpnService() {
                 stopSelf()
                 return START_NOT_STICKY
             }
-            else -> startConnection()
+            else -> {
+                startForeground(NOTIF_ID, buildConnectingNotification())
+                startConnection()
+            }
         }
         return START_STICKY
     }
@@ -113,6 +116,10 @@ class CoreService : VpnService() {
                     return@launch
                 }
 
+                activeProfileName = profile.name
+                val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                nm.notify(NOTIF_ID, buildNotification(profile))
+
                 val tun = setupTunInterface()
                 if (tun == null) {
                     Log.e(TAG, "Failed to create TUN interface")
@@ -123,6 +130,9 @@ class CoreService : VpnService() {
                 tunInterface = tun
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    try {
+                        connectivity.unregisterNetworkCallback(defaultNetworkCallback)
+                    } catch (_: Exception) { /* not registered yet */ }
                     try {
                         connectivity.requestNetwork(defaultNetworkRequest, defaultNetworkCallback)
                     } catch (e: Exception) {
@@ -152,6 +162,7 @@ class CoreService : VpnService() {
                     Log.e(TAG, "Engine failed to start")
                     tunInterface?.close()
                     tunInterface = null
+                    activeProfileName = null
                     _vpnState.value = VpnState.ERROR
                     stopSelf()
                 } else {
@@ -159,8 +170,6 @@ class CoreService : VpnService() {
                         Tun2SocksManager.start(applicationContext, tunFd)
                     }
 
-                    activeProfileName = profile.name
-                    startForeground(NOTIF_ID, buildNotification(profile))
                     _vpnState.value = VpnState.CONNECTED
                     Log.i(TAG, "CoreService started with profile: ${profile.name}")
 
@@ -239,6 +248,22 @@ class CoreService : VpnService() {
     }
 
     // ─── Notification ────────────────────────────────────────────────────────
+
+    private fun buildConnectingNotification(): Notification {
+        createChannel()
+        val mainIntent = Intent(this, MainActivity::class.java)
+        val contentPi = PendingIntent.getActivity(
+            this, 0, mainIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_vpn_key)
+            .setContentTitle("ProxyBox")
+            .setContentText("Connecting\u2026")
+            .setContentIntent(contentPi)
+            .setOngoing(true)
+            .build()
+    }
 
     private fun buildNotification(profile: ProfileEntity): Notification {
         createChannel()

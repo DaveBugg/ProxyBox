@@ -79,11 +79,7 @@ object ConfigBuilder {
     private fun buildDns(preset: RoutingPreset): com.google.gson.JsonElement {
         val servers = mutableListOf<Any>()
 
-        servers.add(mapOf(
-            "address" to "https+local://1.1.1.1/dns-query",
-            "domains" to emptyList<String>()
-        ))
-
+        // Regional DNS for direct domains (resolves locally, not through proxy)
         if (preset.regionDns != null && preset.regionDnsDomains.isNotEmpty()) {
             servers.add(mapOf(
                 "address" to preset.regionDns,
@@ -91,7 +87,9 @@ object ConfigBuilder {
             ))
         }
 
-        servers.add("1.1.1.1")
+        // Primary DoH via Cloudflare (resolves through proxy for non-regional domains)
+        servers.add("https://1.1.1.1/dns-query")
+        // Fallback plain DNS
         servers.add("8.8.8.8")
         servers.add("localhost")
 
@@ -99,7 +97,8 @@ object ConfigBuilder {
             "hosts" to mapOf(
                 "domain:googleapis.cn" to "googleapis.com"
             ),
-            "servers" to servers
+            "servers" to servers,
+            "queryStrategy" to "UseIPv4"
         ))
     }
 
