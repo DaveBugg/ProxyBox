@@ -7,6 +7,8 @@ import androidx.lifecycle.viewModelScope
 import com.dave_cli.proxybox.core.IpCheckService
 import com.dave_cli.proxybox.core.RoutingPreset
 import com.dave_cli.proxybox.core.RoutingPresets
+import com.dave_cli.proxybox.core.UpdateChecker
+import com.dave_cli.proxybox.core.UpdateResult
 import com.dave_cli.proxybox.data.db.AppDatabase
 import com.dave_cli.proxybox.data.db.ProfileEntity
 import com.dave_cli.proxybox.data.db.SubscriptionEntity
@@ -233,6 +235,25 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
 
         return IpCheckResult(service.name, null, lastError, service.isRegional)
+    }
+
+    // ─── App Update ────────────────────────────────────────────────────
+
+    private val _isCheckingUpdate = MutableStateFlow(false)
+    val isCheckingUpdate: StateFlow<Boolean> = _isCheckingUpdate.asStateFlow()
+
+    fun checkForUpdate(onResult: (UpdateResult) -> Unit) {
+        if (_isCheckingUpdate.value) return
+        _isCheckingUpdate.value = true
+        viewModelScope.launch {
+            val result = withContext(Dispatchers.IO) { UpdateChecker.check() }
+            _isCheckingUpdate.value = false
+            onResult(result)
+        }
+    }
+
+    fun downloadAndInstallUpdate(context: Context, url: String, version: String) {
+        UpdateChecker.downloadAndInstall(context, url, version)
     }
 
     private val ipRegex = Regex("""\b(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\b""")

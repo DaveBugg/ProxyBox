@@ -180,6 +180,18 @@
                     android:focusable="true"
                     android:nextFocusLeft="@id/lvProfiles"/>
 
+                <Button
+                    android:id="@+id/btnUpdateApp"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="8dp"
+                    android:text="Update App"
+                    android:textSize="13sp"
+                    android:background="@drawable/tv_btn_focus"
+                    android:textColor="#F472B6"
+                    android:focusable="true"
+                    android:nextFocusLeft="@id/lvProfiles"/>
+
             </LinearLayout>
         </ScrollView>
 

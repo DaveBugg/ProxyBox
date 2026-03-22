@@ -166,6 +166,22 @@ class MainActivity : AppCompatActivity() {
             showIpCheckDialog()
         }
 
+        binding.btnUpdateApp.setOnClickListener {
+            binding.btnUpdateApp.isEnabled = false
+            binding.btnUpdateApp.text = "Checking..."
+            viewModel.checkForUpdate { result ->
+                binding.btnUpdateApp.text = "Update App"
+                binding.btnUpdateApp.isEnabled = true
+                if (result.hasUpdate && result.downloadUrl != null) {
+                    showUpdateDialog(result.latestVersion, result.releaseNotes, result.downloadUrl)
+                } else if (result.hasUpdate) {
+                    Toast.makeText(this, "Update ${result.latestVersion} found but no APK attached", Toast.LENGTH_LONG).show()
+                } else {
+                    Toast.makeText(this, "You're on the latest version (${result.latestVersion})", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
         binding.btnUpdateGeo.setOnClickListener {
             binding.btnUpdateGeo.isEnabled = false
             viewModel.updateGeoFiles { result ->
@@ -189,6 +205,25 @@ class MainActivity : AppCompatActivity() {
                 binding.btnPingAll.text = if (pinging) "Pinging..." else "Ping All"
             }
         }
+    }
+
+    private fun showUpdateDialog(version: String, notes: String?, downloadUrl: String) {
+        val message = buildString {
+            appendLine("New version: v$version")
+            if (!notes.isNullOrBlank()) {
+                appendLine()
+                append(notes)
+            }
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Update Available")
+            .setMessage(message)
+            .setPositiveButton("Download & Install") { _, _ ->
+                viewModel.downloadAndInstallUpdate(this, downloadUrl, version)
+                Toast.makeText(this, "Downloading update...", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("Later", null)
+            .show()
     }
 
     private fun showIpCheckDialog() {

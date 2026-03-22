@@ -71,7 +71,7 @@
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Routing Preset -->
+        <!-- Row 1: ROUTING — Spinner + Update Geo -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -101,18 +101,6 @@
                 android:popupBackground="#1A1A2E"/>
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnIpCheck"
-                style="@style/Widget.MaterialComponents.Button.TextButton"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:text="IP Check"
-                android:textColor="#F59E0B"
-                android:textSize="12sp"
-                android:minWidth="0dp"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"/>
-
-            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnUpdateGeo"
                 style="@style/Widget.MaterialComponents.Button.TextButton"
                 android:layout_width="wrap_content"
@@ -125,7 +113,53 @@
                 android:paddingEnd="8dp"/>
         </LinearLayout>
 
-        <!-- Profile List -->
+        <!-- Row 2: SYSTEM — IP Check + Update App -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:paddingBottom="4dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="System"
+                android:textColor="#7C6FFF"
+                android:textSize="12sp"
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="0.12"
+                android:textAllCaps="true"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnIpCheck"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="IP Check"
+                android:textColor="#F59E0B"
+                android:textSize="12sp"
+                android:minWidth="0dp"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnUpdateApp"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="Update App"
+                android:textColor="#F472B6"
+                android:textSize="12sp"
+                android:minWidth="0dp"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"/>
+        </LinearLayout>
+
+        <!-- Row 3: PROFILES — Test + Ping All -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
