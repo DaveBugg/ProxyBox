@@ -91,7 +91,31 @@ object UpdateChecker {
                 val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
                 if (id != downloadId) return
                 ctx.unregisterReceiver(this)
-                installApk(ctx, target)
+
+                // Query DownloadManager for actual file status and URI
+                val query = DownloadManager.Query().setFilterById(downloadId)
+                val cursor = dm.query(query)
+                if (cursor != null && cursor.moveToFirst()) {
+                    val status = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
+                    if (status == DownloadManager.STATUS_SUCCESSFUL) {
+                        val localUri = cursor.getString(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_LOCAL_URI))
+                        cursor.close()
+                        if (localUri != null) {
+                            val file = File(Uri.parse(localUri).path!!)
+                            Log.d(TAG, "Download complete: ${file.absolutePath} size=${file.length()}")
+                            installApk(ctx, file)
+                        } else {
+                            Log.e(TAG, "Download URI is null")
+                        }
+                    } else {
+                        val reason = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_REASON))
+                        cursor.close()
+                        Log.e(TAG, "Download failed: status=$status reason=$reason")
+                    }
+                } else {
+                    cursor?.close()
+                    Log.e(TAG, "Download query returned no results")
+                }
             }
         }
 
@@ -111,6 +135,11 @@ object UpdateChecker {
     }
 
     private fun installApk(context: Context, file: File) {
+        if (!file.exists() || file.length() == 0L) {
+            Log.e(TAG, "APK file invalid: exists=${file.exists()} size=${file.length()}")
+            return
+        }
+
         val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             FileProvider.getUriForFile(
                 context,
@@ -121,6 +150,7 @@ object UpdateChecker {
             Uri.fromFile(file)
         }
 
+        Log.d(TAG, "Installing APK: uri=$uri file=${file.absolutePath} size=${file.length()}")
         val intent = Intent(Intent.ACTION_VIEW).apply {
             setDataAndType(uri, "application/vnd.android.package-archive")
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
