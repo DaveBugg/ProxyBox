@@ -300,6 +300,7 @@ class TvMainActivity : FragmentActivity() {
                     viewModel.selectRoutingRule(null)
                     Toast.makeText(this@TvMainActivity, "Custom rules disabled", Toast.LENGTH_SHORT).show()
                     dialog.dismiss()
+                    reconnectIfActive()
                 }
             }
             listContainer.addView(noneView)
@@ -329,6 +330,7 @@ class TvMainActivity : FragmentActivity() {
                         viewModel.selectRoutingRule(rule.id)
                         Toast.makeText(this@TvMainActivity, "Activated: ${rule.name}", Toast.LENGTH_SHORT).show()
                         dialog.dismiss()
+                        reconnectIfActive()
                     }
                 }
 
@@ -454,6 +456,16 @@ class TvMainActivity : FragmentActivity() {
     private fun stopVpn() {
         val si = Intent(this, CoreService::class.java).apply { action = CoreService.ACTION_STOP }
         startService(si)
+    }
+
+    private fun reconnectIfActive() {
+        if (CoreService.isActive) {
+            stopVpn()
+            lifecycleScope.launch {
+                kotlinx.coroutines.delay(500)
+                startVpn()
+            }
+        }
     }
 
     private fun isTV(): Boolean {
