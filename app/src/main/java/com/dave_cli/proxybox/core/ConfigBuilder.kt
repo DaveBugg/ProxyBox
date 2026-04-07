@@ -8,7 +8,12 @@ object ConfigBuilder {
 
     private val gson = Gson()
 
-    fun build(profile: ProfileEntity, preset: RoutingPreset? = null): String {
+    fun build(
+        profile: ProfileEntity,
+        preset: RoutingPreset? = null,
+        socksUser: String? = null,
+        socksPass: String? = null,
+    ): String {
         val activePreset = preset ?: RoutingPresets.findById("global")
 
         val outbound = try {
@@ -21,6 +26,17 @@ object ConfigBuilder {
             outbound.addProperty("tag", "proxy")
         }
 
+        val socksSettings: Map<String, Any> =
+            if (!socksUser.isNullOrEmpty() && !socksPass.isNullOrEmpty()) {
+                mapOf(
+                    "auth" to "password",
+                    "accounts" to listOf(mapOf("user" to socksUser, "pass" to socksPass)),
+                    "udp" to true
+                )
+            } else {
+                mapOf("udp" to true)
+            }
+
         val config = JsonObject().apply {
             add("log", JsonObject().apply {
                 addProperty("loglevel", "info")
@@ -29,24 +45,13 @@ object ConfigBuilder {
             add("inbounds", gson.toJsonTree(listOf(
                 mapOf(
                     "tag" to "socks",
-                    "port" to 10808,
+                    "port" to CoreService.SOCKS_PORT,
                     "listen" to "127.0.0.1",
                     "protocol" to "socks",
-                    "settings" to mapOf("udp" to true),
+                    "settings" to socksSettings,
                     "sniffing" to mapOf(
                         "enabled" to true,
                         "destOverride" to listOf("http", "tls", "quic"),
-                        "routeOnly" to false
-                    )
-                ),
-                mapOf(
-                    "tag" to "http",
-                    "port" to 10809,
-                    "listen" to "127.0.0.1",
-                    "protocol" to "http",
-                    "sniffing" to mapOf(
-                        "enabled" to true,
-                        "destOverride" to listOf("http", "tls"),
                         "routeOnly" to false
                     )
                 )

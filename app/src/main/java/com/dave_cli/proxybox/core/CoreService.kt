@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.security.SecureRandom
 
 class CoreService : VpnService() {
 
@@ -42,6 +43,7 @@ class CoreService : VpnService() {
         private const val PRIVATE_VLAN4_CLIENT = "26.26.26.1"
         private const val PRIVATE_VLAN4_ROUTER = "26.26.26.2"
         private const val PRIVATE_VLAN6_CLIENT = "fd00::1"
+        const val SOCKS_PORT = 39271
         private const val TUN_MTU = 9000
 
         private val _vpnState = MutableStateFlow(VpnState.DISCONNECTED)
@@ -51,6 +53,28 @@ class CoreService : VpnService() {
 
         var activeProfileName: String? = null
             private set
+
+        // Per-session credentials for the local SOCKS inbound. Regenerated on every
+        // connect and cleared on stop. Used to prevent other apps on the device from
+        // freely using our local SOCKS proxy (see CVE-style issue in similar clients).
+        @Volatile
+        var socksUser: String? = null
+            private set
+
+        @Volatile
+        var socksPass: String? = null
+            private set
+
+        private fun generateSocksCreds() {
+            val rnd = SecureRandom()
+            val bytes = ByteArray(16)
+            rnd.nextBytes(bytes)
+            val user = bytes.joinToString("") { "%02x".format(it) }
+            rnd.nextBytes(bytes)
+            val pass = bytes.joinToString("") { "%02x".format(it) }
+            socksUser = user
+            socksPass = pass
+        }
     }
 
     private val job = SupervisorJob()
@@ -146,7 +170,8 @@ class CoreService : VpnService() {
                 val preset = RoutingPresets.findById(presetId)
                 Log.i(TAG, "Using routing preset: ${preset.displayName}")
 
-                val configJson = ConfigBuilder.build(profile, preset)
+                generateSocksCreds()
+                val configJson = ConfigBuilder.build(profile, preset, socksUser, socksPass)
                 Log.d(TAG, "Starting engine with config length: ${configJson.length}")
 
                 val tunFd = tun.fd
@@ -168,7 +193,12 @@ class CoreService : VpnService() {
                     stopSelf()
                 } else {
                     if (useTun2Socks) {
-                        Tun2SocksManager.start(applicationContext, tunFd)
+                        Tun2SocksManager.start(
+                            applicationContext,
+                            tunFd,
+                            socksUser = socksUser,
+                            socksPass = socksPass,
+                        )
                     }
 
                     _vpnState.value = VpnState.CONNECTED
@@ -224,6 +254,8 @@ class CoreService : VpnService() {
         tunInterface?.close()
         tunInterface = null
         activeProfileName = null
+        socksUser = null
+        socksPass = null
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             stopForeground(STOP_FOREGROUND_REMOVE)
         } else {

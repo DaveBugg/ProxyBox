@@ -24,7 +24,13 @@ object Tun2SocksManager {
 
     fun isAvailable(): Boolean = nativeLoaded
 
-    fun start(context: Context, tunFd: Int, socksPort: Int = 10808) {
+    fun start(
+        context: Context,
+        tunFd: Int,
+        socksPort: Int = CoreService.SOCKS_PORT,
+        socksUser: String? = null,
+        socksPass: String? = null,
+    ) {
         if (!nativeLoaded) {
             Log.e(TAG, "Cannot start: native library not loaded")
             return
@@ -35,6 +41,11 @@ object Tun2SocksManager {
         }
 
         val configFile = File(context.cacheDir, "tun2socks.yml")
+        val authLines =
+            if (!socksUser.isNullOrEmpty() && !socksPass.isNullOrEmpty()) {
+                "\n              username: '${yamlEscape(socksUser)}'" +
+                "\n              password: '${yamlEscape(socksPass)}'"
+            } else ""
         val config = """
             misc:
               task-stack-size: 81920
@@ -44,7 +55,7 @@ object Tun2SocksManager {
             socks5:
               port: $socksPort
               address: '127.0.0.1'
-              udp: 'udp'
+              udp: 'udp'$authLines
         """.trimIndent()
 
         configFile.writeText(config)
@@ -70,6 +81,9 @@ object Tun2SocksManager {
             Log.e(TAG, "Error stopping tun2socks", e)
         }
     }
+
+    private fun yamlEscape(s: String): String =
+        s.replace("\\", "\\\\").replace("'", "''")
 
     fun getStats(): Pair<Long, Long> {
         if (!nativeLoaded) return Pair(0L, 0L)

@@ -100,11 +100,11 @@ object XrayManager : ProxyEngine {
             try {
                 Thread.sleep(1000)
                 val socket = Socket()
-                socket.connect(InetSocketAddress("127.0.0.1", 10808), 2000)
+                socket.connect(InetSocketAddress("127.0.0.1", CoreService.SOCKS_PORT), 2000)
                 socket.close()
-                Log.i(TAG, "SOCKS proxy on 10808 is LISTENING — OK")
+                Log.i(TAG, "SOCKS proxy on ${CoreService.SOCKS_PORT} is LISTENING — OK")
             } catch (e: Exception) {
-                Log.e(TAG, "SOCKS proxy on 10808 NOT reachable: ${e.message}")
+                Log.e(TAG, "SOCKS proxy on ${CoreService.SOCKS_PORT} NOT reachable: ${e.message}")
             }
         }.start()
     }

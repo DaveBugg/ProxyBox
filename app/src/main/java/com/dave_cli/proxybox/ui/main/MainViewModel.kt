@@ -22,8 +22,10 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.dave_cli.proxybox.core.CoreService
+import java.net.Authenticator
 import java.net.HttpURLConnection
 import java.net.InetSocketAddress
+import java.net.PasswordAuthentication
 import java.net.Proxy
 import java.net.URL
 
@@ -49,6 +51,22 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _isCheckingIp = MutableStateFlow(false)
     val isCheckingIp: StateFlow<Boolean> = _isCheckingIp.asStateFlow()
+
+    init {
+        // The local SOCKS inbound is now password-protected. When we route our own
+        // HTTP requests (IP check, test connection) through 127.0.0.1:39271, the JDK
+        // SOCKS client asks this Authenticator for credentials.
+        Authenticator.setDefault(object : Authenticator() {
+            override fun getPasswordAuthentication(): PasswordAuthentication? {
+                if (requestingProtocol?.equals("SOCKS5", ignoreCase = true) != true) {
+                    return null
+                }
+                val user = CoreService.socksUser ?: return null
+                val pass = CoreService.socksPass ?: return null
+                return PasswordAuthentication(user, pass.toCharArray())
+            }
+        })
+    }
 
     fun selectProfile(id: String) = viewModelScope.launch { repo.selectProfile(id) }
 
@@ -198,7 +216,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun vpnProxy(): Proxy =
         if (CoreService.isActive)
-            Proxy(Proxy.Type.SOCKS, InetSocketAddress("127.0.0.1", 10808))
+            Proxy(Proxy.Type.SOCKS, InetSocketAddress("127.0.0.1", CoreService.SOCKS_PORT))
         else
             Proxy.NO_PROXY
 
