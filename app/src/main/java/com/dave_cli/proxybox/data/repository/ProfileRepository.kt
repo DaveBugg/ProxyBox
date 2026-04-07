@@ -2,7 +2,9 @@ package com.dave_cli.proxybox.data.repository
 
 import com.dave_cli.proxybox.data.db.AppDatabase
 import com.dave_cli.proxybox.data.db.ProfileEntity
+import com.dave_cli.proxybox.data.db.RoutingRuleEntity
 import com.dave_cli.proxybox.data.db.SubscriptionEntity
+import com.dave_cli.proxybox.core.RoutingRuleValidator
 import com.dave_cli.proxybox.import_config.ConfigParser
 import com.dave_cli.proxybox.import_config.SubscriptionParser
 import com.google.gson.Gson
@@ -21,10 +23,12 @@ class ProfileRepository(db: AppDatabase) {
 
     private val profileDao = db.profileDao()
     private val subscriptionDao = db.subscriptionDao()
+    private val routingRuleDao = db.routingRuleDao()
     private val gson = Gson()
 
     val profiles: Flow<List<ProfileEntity>> = profileDao.getAllProfiles()
     val subscriptions: Flow<List<SubscriptionEntity>> = subscriptionDao.getAllSubscriptions()
+    val routingRules: Flow<List<RoutingRuleEntity>> = routingRuleDao.getAllRules()
 
     suspend fun addProfileFromString(input: String): Boolean = withContext(Dispatchers.IO) {
         val lines = input.lines().map { it.trim() }.filter { it.isNotEmpty() }
@@ -121,5 +125,35 @@ class ProfileRepository(db: AppDatabase) {
     suspend fun deleteSubscription(sub: SubscriptionEntity) = withContext(Dispatchers.IO) {
         profileDao.deleteBySubscription(sub.id)
         subscriptionDao.delete(sub)
+    }
+
+    // ─── Routing Rules ──────────────────────────────────────────────────
+
+    suspend fun addRoutingRule(name: String, json: String): String? = withContext(Dispatchers.IO) {
+        val result = RoutingRuleValidator.validate(json)
+        android.util.Log.d("ProfileRepo", "addRoutingRule: valid=${result.valid} ruleCount=${result.ruleCount} error=${result.error}")
+        if (!result.valid) return@withContext result.error
+        val rule = RoutingRuleEntity(
+            id = UUID.randomUUID().toString(),
+            name = name,
+            rulesJson = result.rulesJson,
+            ruleCount = result.ruleCount
+        )
+        routingRuleDao.insertOrReplace(rule)
+        android.util.Log.d("ProfileRepo", "addRoutingRule: inserted rule id=${rule.id} name=${rule.name}")
+        null // null = success
+    }
+
+    suspend fun deleteRoutingRule(rule: RoutingRuleEntity) = withContext(Dispatchers.IO) {
+        routingRuleDao.delete(rule)
+    }
+
+    suspend fun selectRoutingRule(id: String?) = withContext(Dispatchers.IO) {
+        routingRuleDao.clearSelection()
+        if (id != null) routingRuleDao.selectRule(id)
+    }
+
+    suspend fun getSelectedRoutingRule() = withContext(Dispatchers.IO) {
+        routingRuleDao.getSelectedRule()
     }
 }

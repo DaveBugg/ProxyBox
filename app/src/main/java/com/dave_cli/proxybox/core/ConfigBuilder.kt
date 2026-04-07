@@ -13,6 +13,7 @@ object ConfigBuilder {
         preset: RoutingPreset? = null,
         socksUser: String? = null,
         socksPass: String? = null,
+        customRulesJson: String? = null,
     ): String {
         val activePreset = preset ?: RoutingPresets.findById("global")
 
@@ -76,7 +77,7 @@ object ConfigBuilder {
             )))
 
             add("dns", buildDns(activePreset))
-            add("routing", buildRouting(activePreset))
+            add("routing", buildRouting(activePreset, customRulesJson))
         }
 
         return config.toString()
@@ -108,7 +109,7 @@ object ConfigBuilder {
         ))
     }
 
-    private fun buildRouting(preset: RoutingPreset): com.google.gson.JsonElement {
+    private fun buildRouting(preset: RoutingPreset, customRulesJson: String? = null): com.google.gson.JsonElement {
         val rules = mutableListOf<Map<String, Any>>()
 
         rules.add(mapOf(
@@ -122,6 +123,28 @@ object ConfigBuilder {
             "outboundTag" to "direct",
             "ip" to listOf("geoip:private")
         ))
+
+        // Custom routing rules (from imported v2rayN JSON)
+        if (!customRulesJson.isNullOrEmpty()) {
+            try {
+                val customArray = gson.fromJson(customRulesJson, com.google.gson.JsonArray::class.java)
+                for (i in 0 until customArray.size()) {
+                    val rule = customArray[i].asJsonObject
+                    val map = mutableMapOf<String, Any>()
+                    for (entry in rule.entrySet()) {
+                        val v = entry.value
+                        when {
+                            v.isJsonPrimitive -> map[entry.key] = v.asString
+                            v.isJsonArray -> map[entry.key] = v.asJsonArray.map { it.asString }
+                            else -> map[entry.key] = v
+                        }
+                    }
+                    rules.add(map)
+                }
+            } catch (e: Exception) {
+                android.util.Log.w("ConfigBuilder", "Failed to parse custom rules, skipping", e)
+            }
+        }
 
         if (preset.directDomains.isNotEmpty()) {
             rules.add(mapOf(

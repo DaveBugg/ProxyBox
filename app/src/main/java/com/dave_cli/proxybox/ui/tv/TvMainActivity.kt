@@ -3,12 +3,16 @@ package com.dave_cli.proxybox.ui.tv
 import android.app.UiModeManager
 import android.content.Intent
 import android.content.res.Configuration
+import android.graphics.Typeface
 import android.net.VpnService
 import android.os.Bundle
+import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -97,6 +101,10 @@ class TvMainActivity : FragmentActivity() {
 
         setupPresetSpinner()
         setupIpCheck()
+
+        binding.btnRules.setOnClickListener {
+            showRulesDialog()
+        }
 
         lifecycleScope.launch {
             viewModel.isPinging.collect { pinging ->
@@ -256,6 +264,108 @@ class TvMainActivity : FragmentActivity() {
                 }
             }
         }
+    }
+
+    private fun showRulesDialog() {
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(48, 32, 48, 16)
+        }
+        val listContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+        }
+        container.addView(listContainer)
+
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("Routing Rules")
+            .setView(ScrollView(this).apply { addView(container) })
+            .setNeutralButton("Add via Phone") { _, _ ->
+                startActivity(Intent(this, LocalServerActivity::class.java))
+            }
+            .setPositiveButton("Close", null)
+            .create()
+
+        fun refreshList() {
+            listContainer.removeAllViews()
+            val rules = viewModel.routingRules.value
+
+            val noneView = TextView(this@TvMainActivity).apply {
+                text = if (rules.none { it.isSelected }) "  None (no custom rules)" else "  None"
+                textSize = 16f
+                setTextColor(if (rules.none { it.isSelected }) 0xFF4ADE80.toInt() else 0xFFE0E0FF.toInt())
+                if (rules.none { it.isSelected }) setTypeface(null, Typeface.BOLD)
+                setPadding(0, 24, 0, 24)
+                isFocusable = true
+                setOnClickListener {
+                    viewModel.selectRoutingRule(null)
+                    Toast.makeText(this@TvMainActivity, "Custom rules disabled", Toast.LENGTH_SHORT).show()
+                    dialog.dismiss()
+                }
+            }
+            listContainer.addView(noneView)
+
+            listContainer.addView(View(this@TvMainActivity).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, 1
+                ).apply { topMargin = 4; bottomMargin = 4 }
+                setBackgroundColor(0xFF2A2A4A.toInt())
+            })
+
+            for (rule in rules) {
+                val row = LinearLayout(this@TvMainActivity).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                    setPadding(0, 20, 0, 20)
+                }
+
+                val label = TextView(this@TvMainActivity).apply {
+                    text = "${if (rule.isSelected) "  " else "  "}${rule.name} (${rule.ruleCount} rules)"
+                    textSize = 16f
+                    setTextColor(if (rule.isSelected) 0xFF4ADE80.toInt() else 0xFFE0E0FF.toInt())
+                    if (rule.isSelected) setTypeface(null, Typeface.BOLD)
+                    layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                    isFocusable = true
+                    setOnClickListener {
+                        viewModel.selectRoutingRule(rule.id)
+                        Toast.makeText(this@TvMainActivity, "Activated: ${rule.name}", Toast.LENGTH_SHORT).show()
+                        dialog.dismiss()
+                    }
+                }
+
+                val deleteBtn = TextView(this@TvMainActivity).apply {
+                    text = "  Delete  "
+                    textSize = 14f
+                    setTextColor(0xFFF87171.toInt())
+                    isFocusable = true
+                    setOnClickListener {
+                        AlertDialog.Builder(this@TvMainActivity)
+                            .setTitle("Delete \"${rule.name}\"?")
+                            .setPositiveButton("Delete") { _, _ ->
+                                viewModel.deleteRoutingRule(rule)
+                                Toast.makeText(this@TvMainActivity, "Deleted", Toast.LENGTH_SHORT).show()
+                                dialog.dismiss()
+                            }
+                            .setNegativeButton("Cancel", null)
+                            .show()
+                    }
+                }
+
+                row.addView(label)
+                row.addView(deleteBtn)
+                listContainer.addView(row)
+            }
+
+            if (rules.isEmpty()) {
+                listContainer.addView(TextView(this@TvMainActivity).apply {
+                    text = "\nNo custom rules imported yet.\nFormat: v2rayN routing rules JSON\nUse \"Add via Phone\" to import."
+                    textSize = 14f
+                    setTextColor(0xFF555577.toInt())
+                })
+            }
+        }
+
+        refreshList()
+        dialog.show()
     }
 
     private fun observeProfiles() {

@@ -11,6 +11,7 @@ import com.dave_cli.proxybox.core.UpdateChecker
 import com.dave_cli.proxybox.core.UpdateResult
 import com.dave_cli.proxybox.data.db.AppDatabase
 import com.dave_cli.proxybox.data.db.ProfileEntity
+import com.dave_cli.proxybox.data.db.RoutingRuleEntity
 import com.dave_cli.proxybox.data.db.SubscriptionEntity
 import com.dave_cli.proxybox.data.repository.ProfileRepository
 import kotlinx.coroutines.Dispatchers
@@ -39,6 +40,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     val subscriptions: StateFlow<List<SubscriptionEntity>> = repo.subscriptions
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val routingRules: StateFlow<List<RoutingRuleEntity>> = repo.routingRules
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     private val _isPinging = MutableStateFlow(false)
     val isPinging: StateFlow<Boolean> = _isPinging.asStateFlow()
@@ -135,6 +139,23 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             }
             onResult(result)
         }
+    }
+
+    // ─── Routing Rules ─────────────────────────────────────────────────
+
+    fun addRoutingRule(name: String, json: String, onResult: (String?) -> Unit) {
+        viewModelScope.launch {
+            val error = repo.addRoutingRule(name, json)
+            onResult(error)
+        }
+    }
+
+    fun deleteRoutingRule(rule: RoutingRuleEntity) = viewModelScope.launch {
+        repo.deleteRoutingRule(rule)
+    }
+
+    fun selectRoutingRule(id: String?) = viewModelScope.launch {
+        repo.selectRoutingRule(id)
     }
 
     // ─── Geo Update ────────────────────────────────────────────────────

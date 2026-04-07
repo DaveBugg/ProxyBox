@@ -171,7 +171,12 @@ class CoreService : VpnService() {
                 Log.i(TAG, "Using routing preset: ${preset.displayName}")
 
                 generateSocksCreds()
-                val configJson = ConfigBuilder.build(profile, preset, socksUser, socksPass)
+                val selectedRule = db.routingRuleDao().getSelectedRule()
+                val customRulesJson = selectedRule?.rulesJson
+                if (selectedRule != null) {
+                    Log.i(TAG, "Using custom routing rule: ${selectedRule.name} (${selectedRule.ruleCount} rules)")
+                }
+                val configJson = ConfigBuilder.build(profile, preset, socksUser, socksPass, customRulesJson)
                 Log.d(TAG, "Starting engine with config length: ${configJson.length}")
 
                 val tunFd = tun.fd

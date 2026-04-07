@@ -101,6 +101,18 @@
                 android:popupBackground="#1A1A2E"/>
 
             <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRules"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="Rules"
+                android:textColor="#4ADE80"
+                android:textSize="12sp"
+                android:minWidth="0dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"/>
+
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnUpdateGeo"
                 style="@style/Widget.MaterialComponents.Button.TextButton"
                 android:layout_width="wrap_content"

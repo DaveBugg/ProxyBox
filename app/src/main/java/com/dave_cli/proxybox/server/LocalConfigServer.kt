@@ -36,6 +36,7 @@ class LocalConfigServer(
             session.method == Method.GET && session.uri == "/" -> serveMainPage()
             session.method == Method.POST && session.uri == "/import" -> handleImport(session)
             session.method == Method.POST && session.uri == "/subscribe" -> handleSubscription(session)
+            session.method == Method.POST && session.uri == "/import-rule" -> handleImportRule(session)
             else -> newFixedLengthResponse(Response.Status.NOT_FOUND, MIME_PLAINTEXT, "Not found")
         }
     }
@@ -120,6 +121,19 @@ class LocalConfigServer(
   </form>
 </div>
 
+<div class="card">
+  <h2>Routing Rules (v2rayN JSON)</h2>
+  <form id="ruleForm">
+    <label>Rule Set Name</label>
+    <input type="text" id="ruleName" placeholder="My custom rules" style="margin-bottom: 10px;">
+    <label>Paste v2rayN routing rules JSON array</label>
+    <textarea id="ruleJson" placeholder='[{"type":"field","outboundTag":"proxy","domain":["domain:example.com"]}]'></textarea>
+    <button type="submit" style="background: linear-gradient(135deg, #4ade80, #22c55e);">Import Rules</button>
+    <div class="success" id="ruleSuccess"></div>
+    <div class="error" id="ruleError"></div>
+  </form>
+</div>
+
 <script>
 document.getElementById('textForm').addEventListener('submit', async e => {
   e.preventDefault();
@@ -158,6 +172,23 @@ document.getElementById('subForm').addEventListener('submit', async e => {
   document.getElementById('subError').style.display = ok ? 'none' : 'block';
   document.getElementById('subError').textContent = ok ? '' : msg;
   if (ok) { document.getElementById('subName').value = ''; document.getElementById('subUrl').value = ''; }
+});
+
+document.getElementById('ruleForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const name = document.getElementById('ruleName').value.trim();
+  const json = document.getElementById('ruleJson').value.trim();
+  if (!json) return;
+  const fd = new FormData();
+  fd.append('name', name || 'Custom Rules');
+  fd.append('json', json);
+  const r = await fetch('/import-rule', { method: 'POST', body: fd });
+  const msg = await r.text();
+  document.getElementById('ruleSuccess').style.display = r.ok ? 'block' : 'none';
+  document.getElementById('ruleSuccess').textContent = r.ok ? msg : '';
+  document.getElementById('ruleError').style.display = r.ok ? 'none' : 'block';
+  document.getElementById('ruleError').textContent = r.ok ? '' : msg;
+  if (r.ok) { document.getElementById('ruleName').value = ''; document.getElementById('ruleJson').value = ''; }
 });
 </script>
 </body>
@@ -245,6 +276,35 @@ document.getElementById('subForm').addEventListener('submit', async e => {
             }
         } catch (e: Exception) {
             Log.e(TAG, "Subscription error", e)
+            newFixedLengthResponse(Response.Status.INTERNAL_ERROR, MIME_PLAINTEXT, "Error: ${e.message}")
+        }
+    }
+
+    private fun handleImportRule(session: IHTTPSession): Response {
+        return try {
+            val files = mutableMapOf<String, String>()
+            session.parseBody(files)
+            val params = session.parameters
+
+            val name = params["name"]?.firstOrNull() ?: "Custom Rules"
+            val json = params["json"]?.firstOrNull()
+                ?: return newFixedLengthResponse(Response.Status.BAD_REQUEST, MIME_PLAINTEXT, "No JSON provided")
+
+            var error: String? = null
+            val latch = java.util.concurrent.CountDownLatch(1)
+            scope.launch {
+                error = repo.addRoutingRule(name, json)
+                latch.countDown()
+            }
+            latch.await(10, java.util.concurrent.TimeUnit.SECONDS)
+
+            if (error == null) {
+                newFixedLengthResponse(Response.Status.OK, MIME_PLAINTEXT, "Rule set \"$name\" added!")
+            } else {
+                newFixedLengthResponse(Response.Status.BAD_REQUEST, MIME_PLAINTEXT, "Validation failed: $error")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Import rule error", e)
             newFixedLengthResponse(Response.Status.INTERNAL_ERROR, MIME_PLAINTEXT, "Error: ${e.message}")
         }
     }

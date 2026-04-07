@@ -157,6 +157,18 @@
                     android:nextFocusLeft="@id/lvProfiles"/>
 
                 <Button
+                    android:id="@+id/btnRules"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="8dp"
+                    android:text="Routing Rules"
+                    android:textSize="13sp"
+                    android:background="@drawable/tv_btn_focus"
+                    android:textColor="#4ADE80"
+                    android:focusable="true"
+                    android:nextFocusLeft="@id/lvProfiles"/>
+
+                <Button
                     android:id="@+id/btnIpCheck"
                     android:layout_width="match_parent"
                     android:layout_height="50dp"
