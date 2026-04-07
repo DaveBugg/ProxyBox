@@ -31,6 +31,9 @@
 -keep class go.** { *; }
 -keep class Libv2ray.** { *; }
 
+# ── hev-socks5-tunnel (tun2socks JNI) ─────────────────────
+-keep class hev.htproxy.** { *; }
+
 # ── NanoHTTPD ───────────────────────────────────────────────
 -keep class fi.iki.elonen.** { *; }
 
