@@ -17,14 +17,17 @@
 
     <TextView
         android:id="@+id/widget_status"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_centerVertical="true"
         android:layout_toEndOf="@id/widget_icon"
         android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
         android:text="Disconnected"
         android:textColor="#FFFFFFFF"
-        android:textSize="14sp"
-        android:textStyle="bold" />
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:maxLines="2"
+        android:ellipsize="end" />
 
 </RelativeLayout>
