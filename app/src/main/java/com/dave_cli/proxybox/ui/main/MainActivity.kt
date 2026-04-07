@@ -18,6 +18,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import kotlinx.coroutines.flow.first
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -72,15 +73,25 @@ class MainActivity : AppCompatActivity() {
         handleWidgetIntent(intent)
     }
 
-    override fun onNewIntent(intent: Intent?) {
+    @Suppress("DEPRECATION")
+    override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        intent?.let { handleWidgetIntent(it) }
+        handleWidgetIntent(intent)
     }
+
+    private var pendingWidgetConnect = false
 
     private fun handleWidgetIntent(intent: Intent) {
         if (intent.action == com.dave_cli.proxybox.widget.VpnWidgetProvider.ACTION_CONNECT) {
             if (!CoreService.isActive) {
-                requestVpnPermission()
+                pendingWidgetConnect = true
+                lifecycleScope.launch {
+                    // Wait for profiles to load from DB (cold start)
+                    kotlinx.coroutines.withTimeoutOrNull(3000) {
+                        viewModel.profiles.first { it.isNotEmpty() }
+                    }
+                    requestVpnPermission()
+                }
             }
         }
     }
@@ -585,6 +596,10 @@ class MainActivity : AppCompatActivity() {
                 action = CoreService.ACTION_START
             }
             startForegroundService(si)
+            if (pendingWidgetConnect) {
+                pendingWidgetConnect = false
+                moveTaskToBack(true)
+            }
         }
     }
 
