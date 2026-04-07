@@ -68,6 +68,21 @@ class MainActivity : AppCompatActivity() {
         setupButtons()
         observeProfiles()
         observeVpnState()
+
+        handleWidgetIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        intent?.let { handleWidgetIntent(it) }
+    }
+
+    private fun handleWidgetIntent(intent: Intent) {
+        if (intent.action == com.dave_cli.proxybox.widget.VpnWidgetProvider.ACTION_CONNECT) {
+            if (!CoreService.isActive) {
+                requestVpnPermission()
+            }
+        }
     }
 
     private fun isTV(): Boolean {

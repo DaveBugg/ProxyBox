@@ -3,7 +3,6 @@ package com.dave_cli.proxybox.widget
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.widget.RemoteViews
@@ -29,14 +28,7 @@ class VpnSmallWidgetProvider : AppWidgetProvider() {
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
         if (intent.action == ACTION_TOGGLE) {
-            val serviceIntent = Intent(context, CoreService::class.java)
-            if (CoreService.isActive) {
-                serviceIntent.action = CoreService.ACTION_STOP
-                context.startService(serviceIntent)
-            } else {
-                serviceIntent.action = CoreService.ACTION_START
-                context.startForegroundService(serviceIntent)
-            }
+            VpnWidgetProvider.toggleVpn(context)
         }
     }
 

@@ -14,6 +14,23 @@ class VpnWidgetProvider : AppWidgetProvider() {
 
     companion object {
         const val ACTION_TOGGLE = "com.dave_cli.proxybox.widget.TOGGLE_VPN"
+        const val ACTION_CONNECT = "com.dave_cli.proxybox.CONNECT_VPN"
+
+        fun toggleVpn(context: Context) {
+            if (CoreService.isActive) {
+                val stopIntent = Intent(context, CoreService::class.java).apply {
+                    action = CoreService.ACTION_STOP
+                }
+                context.startService(stopIntent)
+            } else {
+                // Launch MainActivity to handle VPN permission and connect
+                val launchIntent = Intent(context, com.dave_cli.proxybox.ui.main.MainActivity::class.java).apply {
+                    action = ACTION_CONNECT
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                context.startActivity(launchIntent)
+            }
+        }
 
         fun updateAll(context: Context) {
             val mgr = AppWidgetManager.getInstance(context)
@@ -51,14 +68,7 @@ class VpnWidgetProvider : AppWidgetProvider() {
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
         if (intent.action == ACTION_TOGGLE) {
-            val serviceIntent = Intent(context, CoreService::class.java)
-            if (CoreService.isActive) {
-                serviceIntent.action = CoreService.ACTION_STOP
-                context.startService(serviceIntent)
-            } else {
-                serviceIntent.action = CoreService.ACTION_START
-                context.startForegroundService(serviceIntent)
-            }
+            toggleVpn(context)
         }
     }
 
