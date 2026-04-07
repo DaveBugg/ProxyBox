@@ -1,21 +1,48 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# ── Stack traces ─────────────────────────────────────────────
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# ── Gson (used for JSON serialization) ──────────────────────
+-keepattributes Signature
+-keepattributes *Annotation*
+-keep class com.google.gson.** { *; }
+-keep class * implements com.google.gson.TypeAdapterFactory
+-keep class * implements com.google.gson.JsonSerializer
+-keep class * implements com.google.gson.JsonDeserializer
+# Keep data classes that Gson deserializes
+-keep class com.dave_cli.proxybox.data.db.** { *; }
+-keep class com.dave_cli.proxybox.core.UpdateResult { *; }
+-keep class com.dave_cli.proxybox.ui.main.IpCheckResult { *; }
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# ── Room ────────────────────────────────────────────────────
+-keep class * extends androidx.room.RoomDatabase
+-keep @androidx.room.Entity class *
+-keep @androidx.room.Dao class *
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# ── Retrofit / OkHttp ──────────────────────────────────────
+-keep class retrofit2.** { *; }
+-keepattributes Exceptions
+-dontwarn retrofit2.**
+-dontwarn okhttp3.**
+-dontwarn okio.**
+
+# ── libv2ray / Xray native ─────────────────────────────────
+-keep class libv2ray.** { *; }
+-keep class go.** { *; }
+-keep class Libv2ray.** { *; }
+
+# ── NanoHTTPD ───────────────────────────────────────────────
+-keep class fi.iki.elonen.** { *; }
+
+# ── ZXing ───────────────────────────────────────────────────
+-keep class com.google.zxing.** { *; }
+-keep class com.journeyapps.barcodescanner.** { *; }
+
+# ── Widget (referenced from XML) ───────────────────────────
+-keep class com.dave_cli.proxybox.widget.VpnWidgetProvider { *; }
+
+# ── BroadcastReceivers ─────────────────────────────────────
+-keep class com.dave_cli.proxybox.core.BootReceiver { *; }
+
+# ── VPN Service ─────────────────────────────────────────────
+-keep class com.dave_cli.proxybox.core.CoreService { *; }

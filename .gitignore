@@ -40,6 +40,7 @@ desktop.ini
 # Keystore (never commit signing keys)
 *.jks
 *.keystore
+keystore.properties
 
 # Heap dumps & crash logs
 *.hprof

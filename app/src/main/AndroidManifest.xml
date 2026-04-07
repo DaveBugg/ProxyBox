@@ -92,6 +92,19 @@
                 android:resource="@xml/file_provider_paths" />
         </provider>
 
+        <!-- VPN Widget -->
+        <receiver
+            android:name=".widget.VpnWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.dave_cli.proxybox.widget.TOGGLE_VPN" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info" />
+        </receiver>
+
         <!-- Boot receiver -->
         <receiver
             android:name=".core.BootReceiver"

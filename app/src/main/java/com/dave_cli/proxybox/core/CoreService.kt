@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.dave_cli.proxybox.widget.VpnWidgetProvider
 import java.security.SecureRandom
 
 class CoreService : VpnService() {
@@ -195,6 +196,7 @@ class CoreService : VpnService() {
                     tunInterface = null
                     activeProfileName = null
                     _vpnState.value = VpnState.ERROR
+                    VpnWidgetProvider.updateAll(applicationContext)
                     stopSelf()
                 } else {
                     if (useTun2Socks) {
@@ -207,6 +209,7 @@ class CoreService : VpnService() {
                     }
 
                     _vpnState.value = VpnState.CONNECTED
+                    VpnWidgetProvider.updateAll(applicationContext)
                     Log.i(TAG, "CoreService started with profile: ${profile.name}")
 
                     val prefs = getSharedPreferences("proxybox_prefs", Context.MODE_PRIVATE)
@@ -268,6 +271,7 @@ class CoreService : VpnService() {
             stopForeground(true)
         }
         _vpnState.value = VpnState.DISCONNECTED
+        VpnWidgetProvider.updateAll(applicationContext)
 
         val prefs = getSharedPreferences("proxybox_prefs", Context.MODE_PRIVATE)
         prefs.edit().putBoolean("auto_start", false).apply()
