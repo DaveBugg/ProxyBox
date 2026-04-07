@@ -10,32 +10,10 @@ import android.widget.RemoteViews
 import com.dave_cli.proxybox.R
 import com.dave_cli.proxybox.core.CoreService
 
-class VpnWidgetProvider : AppWidgetProvider() {
+class VpnSmallWidgetProvider : AppWidgetProvider() {
 
     companion object {
-        const val ACTION_TOGGLE = "com.dave_cli.proxybox.widget.TOGGLE_VPN"
-
-        fun updateAll(context: Context) {
-            val mgr = AppWidgetManager.getInstance(context)
-
-            val ids = mgr.getAppWidgetIds(ComponentName(context, VpnWidgetProvider::class.java))
-            if (ids.isNotEmpty()) {
-                val intent = Intent(context, VpnWidgetProvider::class.java).apply {
-                    action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
-                }
-                context.sendBroadcast(intent)
-            }
-
-            val smallIds = mgr.getAppWidgetIds(ComponentName(context, VpnSmallWidgetProvider::class.java))
-            if (smallIds.isNotEmpty()) {
-                val intent = Intent(context, VpnSmallWidgetProvider::class.java).apply {
-                    action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, smallIds)
-                }
-                context.sendBroadcast(intent)
-            }
-        }
+        const val ACTION_TOGGLE = "com.dave_cli.proxybox.widget.TOGGLE_VPN_SMALL"
     }
 
     override fun onUpdate(
@@ -68,24 +46,21 @@ class VpnWidgetProvider : AppWidgetProvider() {
         appWidgetId: Int
     ) {
         val connected = CoreService.isActive
-        val views = RemoteViews(context.packageName, R.layout.widget_vpn)
+        val views = RemoteViews(context.packageName, R.layout.widget_vpn_small)
 
         if (connected) {
-            val name = CoreService.activeProfileName ?: "Connected"
-            views.setTextViewText(R.id.widget_status, name)
-            views.setTextColor(R.id.widget_status, 0xFF4ADE80.toInt())
             views.setInt(R.id.widget_root, "setBackgroundResource", R.drawable.widget_bg_connected)
+            views.setInt(R.id.widget_icon, "setColorFilter", 0xFF4ADE80.toInt())
         } else {
-            views.setTextViewText(R.id.widget_status, "Disconnected")
-            views.setTextColor(R.id.widget_status, 0xFFAAAACC.toInt())
             views.setInt(R.id.widget_root, "setBackgroundResource", R.drawable.widget_bg)
+            views.setInt(R.id.widget_icon, "setColorFilter", 0xFF888899.toInt())
         }
 
-        val toggleIntent = Intent(context, VpnWidgetProvider::class.java).apply {
+        val toggleIntent = Intent(context, VpnSmallWidgetProvider::class.java).apply {
             action = ACTION_TOGGLE
         }
         val pendingIntent = PendingIntent.getBroadcast(
-            context, 0, toggleIntent,
+            context, 1, toggleIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         views.setOnClickPendingIntent(R.id.widget_root, pendingIntent)

@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">ProxyBox</string>
     <string name="widget_description">Toggle VPN connection</string>
+    <string name="widget_small_description">VPN on/off button</string>
 </resources>

@@ -43,6 +43,7 @@
 
 # ── Widget (referenced from XML) ───────────────────────────
 -keep class com.dave_cli.proxybox.widget.VpnWidgetProvider { *; }
+-keep class com.dave_cli.proxybox.widget.VpnSmallWidgetProvider { *; }
 
 # ── BroadcastReceivers ─────────────────────────────────────
 -keep class com.dave_cli.proxybox.core.BootReceiver { *; }
