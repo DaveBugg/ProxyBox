@@ -56,7 +56,7 @@ ProxyBox hardens the local proxy stack to minimize the attack surface and reduce
 - **Authenticated local SOCKS proxy** — per-session random credentials (user/pass) generated on every connect. Other apps on the device cannot use or detect the local proxy without knowing the password
 - **No HTTP proxy exposed** — only SOCKS inbound on localhost, no secondary HTTP listener
 - **No Xray gRPC/API endpoint** — stats and API inbounds are not created
-- **Full tunnel** — non-VPN network is not accessible from other apps (no split tunnel bypass)
+- **Full tunnel** — all traffic is routed through the VPN, preventing other apps from bypassing it via a direct connection
 - **Not in known VPN app databases** — package name is not flagged by common VPN detection services
 
 > **Note:** Some detection signals like `TRANSPORT_VPN`, `tun0` interface, and `NET_CAPABILITY_NOT_VPN` absence are inherent to the Android VPN API and cannot be avoided by any userspace VPN app.
