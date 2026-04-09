@@ -178,7 +178,10 @@ fun MainScreen(
             ProfileList(
                 profiles = profiles,
                 menuOpenId = menuOpenProfileId,
-                onSelect = { id -> viewModel.selectProfile(id) },
+                onSelect = { id ->
+                    viewModel.selectProfile(id)
+                    if (CoreService.isActive) onReconnect()
+                },
                 onMenuToggle = { id ->
                     menuOpenProfileId = if (menuOpenProfileId == id) null else id
                 },
