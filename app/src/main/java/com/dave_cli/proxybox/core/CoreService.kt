@@ -66,6 +66,10 @@ class CoreService : VpnService() {
         var socksPass: String? = null
             private set
 
+        @Volatile
+        var connectionStartTime: Long = 0L
+            private set
+
         private fun generateSocksCreds() {
             val rnd = SecureRandom()
             val bytes = ByteArray(16)
@@ -209,6 +213,7 @@ class CoreService : VpnService() {
                     }
 
                     _vpnState.value = VpnState.CONNECTED
+                    connectionStartTime = System.currentTimeMillis()
                     VpnWidgetProvider.updateAll(applicationContext)
                     Log.i(TAG, "CoreService started with profile: ${profile.name}")
 
@@ -262,6 +267,7 @@ class CoreService : VpnService() {
         tunInterface?.close()
         tunInterface = null
         activeProfileName = null
+        connectionStartTime = 0L
         socksUser = null
         socksPass = null
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {

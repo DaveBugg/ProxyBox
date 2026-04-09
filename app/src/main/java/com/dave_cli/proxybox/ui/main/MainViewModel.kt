@@ -143,6 +143,22 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    // ─── Speed Test ────────────────────────────────────────────────────
+
+    fun runSpeedTest(onResult: (Double?, String?) -> Unit) {
+        viewModelScope.launch {
+            val selected = profiles.value.firstOrNull { it.isSelected }
+            if (selected == null) {
+                onResult(null, "No profile selected")
+                return@launch
+            }
+            val result = withContext(Dispatchers.IO) {
+                com.dave_cli.proxybox.core.SpeedTestEngine.run(selected)
+            }
+            onResult(result.downloadMbps, result.error)
+        }
+    }
+
     // ─── Routing Rules ─────────────────────────────────────────────────
 
     fun addRoutingRule(name: String, json: String, onResult: (String?) -> Unit) {

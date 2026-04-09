@@ -1,5 +1,7 @@
 # ProxyBox
 
+[![Русский](https://img.shields.io/badge/lang-Русский-blue)](README_ru.md)
+
 ![API](https://img.shields.io/badge/API-24%2B-brightgreen)
 ![License](https://img.shields.io/badge/License-GPLv3-blue)
 ![GitHub release](https://img.shields.io/github/v/release/DaveBugg/ProxyBox)

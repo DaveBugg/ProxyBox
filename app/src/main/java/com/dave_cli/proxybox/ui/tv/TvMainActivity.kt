@@ -102,6 +102,22 @@ class TvMainActivity : FragmentActivity() {
         setupPresetSpinner()
         setupIpCheck()
 
+        binding.btnSpeedTest.setOnClickListener {
+            binding.btnSpeedTest.isEnabled = false
+            binding.btnSpeedTest.text = "Testing..."
+            viewModel.runSpeedTest { mbps, error ->
+                if (mbps != null) {
+                    binding.btnSpeedTest.text = "↓ %.1f Mbps".format(mbps)
+                } else {
+                    binding.btnSpeedTest.text = error ?: "Failed"
+                }
+                binding.btnSpeedTest.isEnabled = true
+                binding.btnSpeedTest.postDelayed({
+                    binding.btnSpeedTest.text = "⚡ Speed Test"
+                }, 5000)
+            }
+        }
+
         binding.btnRules.setOnClickListener {
             showRulesDialog()
         }
@@ -361,7 +377,7 @@ class TvMainActivity : FragmentActivity() {
                 listContainer.addView(TextView(this@TvMainActivity).apply {
                     text = "\nNo custom rules imported yet.\nFormat: v2rayN routing rules JSON\nUse \"Add via Phone\" to import."
                     textSize = 14f
-                    setTextColor(0xFF555577.toInt())
+                    setTextColor(0xFF888899.toInt())
                 })
             }
         }
