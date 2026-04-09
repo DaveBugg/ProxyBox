@@ -76,6 +76,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun deleteProfile(profile: ProfileEntity) = viewModelScope.launch { repo.deleteProfile(profile) }
 
+    fun renameProfile(id: String, newName: String) = viewModelScope.launch { repo.renameProfile(id, newName) }
+
     fun addProfileFromString(input: String, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             val ok = repo.addProfileFromString(input)

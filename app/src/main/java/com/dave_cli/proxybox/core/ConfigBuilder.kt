@@ -2,6 +2,7 @@ package com.dave_cli.proxybox.core
 
 import com.dave_cli.proxybox.data.db.ProfileEntity
 import com.google.gson.Gson
+import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 
 object ConfigBuilder {
@@ -17,11 +18,9 @@ object ConfigBuilder {
     ): String {
         val activePreset = preset ?: RoutingPresets.findById("global")
 
-        val outbound = try {
-            gson.fromJson(profile.configJson, JsonObject::class.java)
-        } catch (e: Exception) {
-            gson.fromJson("{\"protocol\":\"freedom\",\"tag\":\"proxy\"}", JsonObject::class.java)
-        }
+        // configJson may be a single outbound object {"protocol":...}
+        // or an array of outbounds [proxy, frag-proxy, ...] when dialerProxy deps exist
+        val (outbound, extraOutbounds) = parseProfileOutbounds(profile.configJson)
 
         if (!outbound.has("tag") || outbound.get("tag").asString != "proxy") {
             outbound.addProperty("tag", "proxy")
@@ -58,23 +57,27 @@ object ConfigBuilder {
                 )
             )))
 
-            add("outbounds", gson.toJsonTree(listOf(
-                outbound,
-                mapOf(
+            // Build outbounds: proxy + any dependent outbounds (e.g. frag-proxy)
+            // + our standard utility outbounds (direct, block, dns-out)
+            val outboundsArray = JsonArray().apply {
+                add(outbound)
+                extraOutbounds.forEach { add(it) }
+                add(gson.toJsonTree(mapOf(
                     "tag" to "direct",
                     "protocol" to "freedom",
                     "settings" to mapOf("domainStrategy" to "AsIs")
-                ),
-                mapOf(
+                )))
+                add(gson.toJsonTree(mapOf(
                     "tag" to "block",
                     "protocol" to "blackhole",
                     "settings" to mapOf("response" to mapOf("type" to "http"))
-                ),
-                mapOf(
+                )))
+                add(gson.toJsonTree(mapOf(
                     "tag" to "dns-out",
                     "protocol" to "dns"
-                )
-            )))
+                )))
+            }
+            add("outbounds", outboundsArray)
 
             add("dns", buildDns(activePreset))
             add("routing", buildRouting(activePreset, customRulesJson))
@@ -187,5 +190,31 @@ object ConfigBuilder {
             "domainStrategy" to "IPIfNonMatch",
             "rules" to rules
         ))
+    }
+
+    /**
+     * Parses configJson which is either:
+     * - a single JSON object `{...}` (one outbound, legacy/common case)
+     * - a JSON array `[{proxy}, {frag-proxy}, ...]` (proxy + dependent outbounds)
+     *
+     * Returns the main proxy outbound and a list of extra dependent outbounds.
+     */
+    private fun parseProfileOutbounds(configJson: String): Pair<JsonObject, List<JsonObject>> {
+        val trimmed = configJson.trim()
+        return try {
+            if (trimmed.startsWith("[")) {
+                val arr = gson.fromJson(trimmed, JsonArray::class.java)
+                val main = arr.firstOrNull()?.asJsonObject
+                    ?: JsonObject().apply { addProperty("protocol", "freedom"); addProperty("tag", "proxy") }
+                val extras = (1 until arr.size()).map { arr[it].asJsonObject }
+                main to extras
+            } else {
+                val obj = gson.fromJson(trimmed, JsonObject::class.java)
+                obj to emptyList()
+            }
+        } catch (e: Exception) {
+            val fallback = JsonObject().apply { addProperty("protocol", "freedom"); addProperty("tag", "proxy") }
+            fallback to emptyList()
+        }
     }
 }

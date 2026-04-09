@@ -13,7 +13,8 @@ import com.dave_cli.proxybox.databinding.ItemProfileBinding
 
 class ProfileAdapter(
     private val onSelect: (ProfileEntity) -> Unit,
-    private val onDelete: (ProfileEntity) -> Unit
+    private val onDelete: (ProfileEntity) -> Unit,
+    private val onLongClick: (ProfileEntity, View) -> Unit = { _, _ -> }
 ) : ListAdapter<ProfileEntity, ProfileAdapter.VH>(DIFF) {
 
     inner class VH(val binding: ItemProfileBinding) : RecyclerView.ViewHolder(binding.root) {
@@ -40,6 +41,10 @@ class ProfileAdapter(
             }
 
             binding.root.setOnClickListener { onSelect(item) }
+            binding.root.setOnLongClickListener { view ->
+                onLongClick(item, view)
+                true
+            }
             binding.btnDelete.setOnClickListener { onDelete(item) }
         }
     }

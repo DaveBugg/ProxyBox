@@ -293,25 +293,88 @@ object ConfigParser {
 
     private fun parseRawJson(json: String): ProfileEntity {
         val obj = gson.fromJson(json, JsonObject::class.java)
-        val outbound = if (obj.has("outbounds")) {
-            obj.getAsJsonArray("outbounds").firstOrNull()?.asJsonObject ?: obj
-        } else obj
+
+        val outbound: JsonObject
+        val extraOutbounds = mutableListOf<JsonObject>()
+
+        if (obj.has("outbounds")) {
+            val arr = obj.getAsJsonArray("outbounds")
+            val utilityProtocols = setOf("freedom", "blackhole", "dns")
+
+            // Pick the main proxy outbound
+            outbound = arr.firstOrNull {
+                it.asJsonObject.get("tag")?.asString == "proxy"
+            }?.asJsonObject
+                ?: arr.firstOrNull {
+                    it.asJsonObject.get("protocol")?.asString !in utilityProtocols
+                }?.asJsonObject
+                ?: arr.firstOrNull()?.asJsonObject
+                ?: obj
+
+            // Collect outbounds referenced by dialerProxy (e.g. frag-proxy for TLS
+            // fragmentation). Without them xray-core would fail to resolve the reference.
+            val deps = mutableSetOf<String>()
+            collectDialerProxyDeps(outbound, deps)
+            // Iteratively resolve transitive deps (a dialer proxy could itself
+            // reference another one, though unusual)
+            var frontier = deps.toSet()
+            while (frontier.isNotEmpty()) {
+                val next = mutableSetOf<String>()
+                for (tag in frontier) {
+                    val dep = arr.firstOrNull {
+                        it.asJsonObject.get("tag")?.asString == tag
+                    }?.asJsonObject
+                    if (dep != null) {
+                        extraOutbounds.add(dep)
+                        collectDialerProxyDeps(dep, next)
+                    }
+                }
+                next.removeAll(deps)
+                deps.addAll(next)
+                frontier = next
+            }
+        } else {
+            outbound = obj
+        }
 
         if (!outbound.has("tag")) {
             outbound.addProperty("tag", "proxy")
         }
 
         val protocol = outbound.get("protocol")?.asString ?: "raw"
-        val tag = outbound.get("tag")?.asString ?: "proxy"
-        val name = "Import ($protocol / $tag)"
+        val remarks = obj.get("remarks")?.asString
+            ?: obj.get("ps")?.asString
+        val name = if (!remarks.isNullOrBlank()) remarks else "Import ($protocol)"
+
+        // If there are dependent outbounds, store as JSON array [proxy, dep1, dep2, …]
+        // Otherwise store as a single JSON object (backward compatible)
+        val configJson = if (extraOutbounds.isNotEmpty()) {
+            val all = com.google.gson.JsonArray()
+            all.add(outbound)
+            extraOutbounds.forEach { all.add(it) }
+            all.toString()
+        } else {
+            outbound.toString()
+        }
 
         return ProfileEntity(
             id = UUID.randomUUID().toString(),
             name = name,
             protocol = protocol,
-            configJson = outbound.toString(),
+            configJson = configJson,
             rawUri = json.take(500)
         )
+    }
+
+    /** Extracts dialerProxy tag references from an outbound's streamSettings.sockopt */
+    private fun collectDialerProxyDeps(outbound: JsonObject, deps: MutableSet<String>) {
+        val dialerTag = outbound
+            .getAsJsonObject("streamSettings")
+            ?.getAsJsonObject("sockopt")
+            ?.get("dialerProxy")?.asString
+        if (!dialerTag.isNullOrEmpty()) {
+            deps.add(dialerTag)
+        }
     }
 
     // ─── Stream Settings builder ─────────────────────────────────────────────

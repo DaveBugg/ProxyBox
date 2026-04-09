@@ -41,6 +41,9 @@ interface ProfileDao {
     @Query("UPDATE profiles SET latencyMs = :ms WHERE id = :id")
     suspend fun updateLatency(id: String, ms: Long)
 
+    @Query("UPDATE profiles SET name = :name WHERE id = :id")
+    suspend fun updateName(id: String, name: String)
+
     @Query("SELECT COUNT(*) FROM profiles")
     suspend fun count(): Int
 }

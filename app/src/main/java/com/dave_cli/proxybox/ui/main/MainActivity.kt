@@ -110,10 +110,61 @@ class MainActivity : AppCompatActivity() {
                     .setPositiveButton("Delete") { _, _ -> viewModel.deleteProfile(profile) }
                     .setNegativeButton("Cancel", null)
                     .show()
-            }
+            },
+            onLongClick = { profile, view -> showProfileContextMenu(profile, view) }
         )
         binding.rvProfiles.layoutManager = LinearLayoutManager(this)
         binding.rvProfiles.adapter = adapter
+    }
+
+    private fun showProfileContextMenu(profile: com.dave_cli.proxybox.data.db.ProfileEntity, anchor: View) {
+        val popup = android.widget.PopupMenu(this, anchor)
+        popup.menu.add(0, 1, 0, "Rename")
+        popup.menu.add(0, 2, 1, "Delete")
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                1 -> {
+                    showRenameDialog(profile)
+                    true
+                }
+                2 -> {
+                    AlertDialog.Builder(this)
+                        .setTitle("Delete \"${profile.name}\"?")
+                        .setPositiveButton("Delete") { _, _ -> viewModel.deleteProfile(profile) }
+                        .setNegativeButton("Cancel", null)
+                        .show()
+                    true
+                }
+                else -> false
+            }
+        }
+        popup.show()
+    }
+
+    private fun showRenameDialog(profile: com.dave_cli.proxybox.data.db.ProfileEntity) {
+        val input = EditText(this).apply {
+            setText(profile.name)
+            setSelection(text.length)
+            setTextColor(0xFFE0E0FF.toInt())
+            setHintTextColor(0xFF555577.toInt())
+            setBackgroundResource(R.drawable.bg_input)
+            setPadding(32, 24, 32, 24)
+        }
+        val container = android.widget.FrameLayout(this).apply {
+            setPadding(48, 24, 48, 0)
+            addView(input)
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Rename profile")
+            .setView(container)
+            .setPositiveButton("Save") { _, _ ->
+                val newName = input.text.toString().trim()
+                if (newName.isNotEmpty()) {
+                    viewModel.renameProfile(profile.id, newName)
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun setupPresetSpinner() {

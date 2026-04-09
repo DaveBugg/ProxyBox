@@ -31,6 +31,21 @@ class ProfileRepository(db: AppDatabase) {
     val routingRules: Flow<List<RoutingRuleEntity>> = routingRuleDao.getAllRules()
 
     suspend fun addProfileFromString(input: String): Boolean = withContext(Dispatchers.IO) {
+        val trimmed = input.trim()
+
+        // If the whole input looks like a JSON object, parse it as one piece
+        // (full xray/v2ray configs are multi-line JSON — splitting by line would break them)
+        if (trimmed.startsWith("{")) {
+            val profile = ConfigParser.parse(trimmed)
+            if (profile != null) {
+                profileDao.insertOrReplace(profile)
+                return@withContext true
+            }
+            // JSON parse failed — fall through to line-by-line (user may have pasted
+            // something else that happens to start with '{')
+        }
+
+        // Multi-line input: treat each line as an independent URI (vless://, vmess://, etc.)
         val lines = input.lines().map { it.trim() }.filter { it.isNotEmpty() }
         if (lines.size > 1) {
             var added = 0
@@ -41,9 +56,14 @@ class ProfileRepository(db: AppDatabase) {
             }
             return@withContext added > 0
         }
-        val profile = ConfigParser.parse(input) ?: return@withContext false
+
+        val profile = ConfigParser.parse(trimmed) ?: return@withContext false
         profileDao.insertOrReplace(profile)
         true
+    }
+
+    suspend fun renameProfile(id: String, newName: String) = withContext(Dispatchers.IO) {
+        profileDao.updateName(id, newName)
     }
 
     suspend fun deleteProfile(profile: ProfileEntity) = withContext(Dispatchers.IO) {
@@ -61,7 +81,14 @@ class ProfileRepository(db: AppDatabase) {
 
     suspend fun pingProfile(profile: ProfileEntity): Long = withContext(Dispatchers.IO) {
         try {
-            val outbound = gson.fromJson(profile.configJson, JsonObject::class.java)
+            // configJson may be a single object or an array [proxy, frag-proxy, ...]
+            val trimmedConfig = profile.configJson.trim()
+            val outbound = if (trimmedConfig.startsWith("[")) {
+                gson.fromJson(trimmedConfig, com.google.gson.JsonArray::class.java)
+                    .firstOrNull()?.asJsonObject ?: JsonObject()
+            } else {
+                gson.fromJson(trimmedConfig, JsonObject::class.java)
+            }
             val (host, port) = extractHostPort(outbound)
             if (host.isEmpty()) return@withContext -1L
 
