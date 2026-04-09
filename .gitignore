@@ -58,3 +58,6 @@ build_out.txt
 # Plan files
 *.plan.md
 /implementation_plan*
+
+/docs/*.html
+
