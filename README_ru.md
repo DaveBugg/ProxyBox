@@ -22,7 +22,7 @@ Android VPN-клиент с открытым исходным кодом на б
 ## Скриншоты
 
 <p align="center">
-  <img src="docs/Screenshot_20260322_170840.png" alt="Мобильный интерфейс" width="250"/>
+  <img src="docs/Screenshot_20260409.jpg" alt="Мобильный интерфейс" width="250"/>
   &nbsp;&nbsp;&nbsp;&nbsp;
   <img src="docs/Screenshot_20260322_171025.png" alt="Интерфейс Android TV" width="420"/>
   &nbsp;&nbsp;&nbsp;&nbsp;

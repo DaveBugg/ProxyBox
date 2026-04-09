@@ -22,7 +22,7 @@ If you find this project useful, consider supporting development:
 ## Screenshots
 
 <p align="center">
-  <img src="docs/Screenshot_20260322_170840.png" alt="Mobile UI" width="250"/>
+  <img src="docs/Screenshot_20260409.jpg" alt="Mobile UI" width="250"/>
   &nbsp;&nbsp;&nbsp;&nbsp;
   <img src="docs/Screenshot_20260322_171025.png" alt="Android TV UI" width="420"/>
   &nbsp;&nbsp;&nbsp;&nbsp;
