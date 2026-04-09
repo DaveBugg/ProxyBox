@@ -47,6 +47,19 @@ If you find this project useful, consider supporting development:
 - **Auto-update geo databases**: geoip.dat and geosite.dat from [v2fly](https://github.com/v2fly/geoip) via WorkManager (daily, Wi-Fi only)
 - **Boot auto-start**: automatically reconnect VPN after device reboot
 - **Local storage**: all configs stored locally in Room database
+- **Full JSON config import**: accepts complete xray/v2ray configs with automatic dependent outbound preservation (frag-proxy, WARP chains via `dialerProxy` / `proxySettings.tag`)
+
+## Security & Anti-Detection
+
+ProxyBox hardens the local proxy stack to minimize the attack surface and reduce VPN fingerprinting. Verified with [RKN Hardering](https://github.com/xtclovver/RKNHardering):
+
+- **Authenticated local SOCKS proxy** — per-session random credentials (user/pass) generated on every connect. Other apps on the device cannot use or detect the local proxy without knowing the password
+- **No HTTP proxy exposed** — only SOCKS inbound on localhost, no secondary HTTP listener
+- **No Xray gRPC/API endpoint** — stats and API inbounds are not created
+- **Full tunnel** — non-VPN network is not accessible from other apps (no split tunnel bypass)
+- **Not in known VPN app databases** — package name is not flagged by common VPN detection services
+
+> **Note:** Some detection signals like `TRANSPORT_VPN`, `tun0` interface, and `NET_CAPABILITY_NOT_VPN` absence are inherent to the Android VPN API and cannot be avoided by any userspace VPN app.
 
 ## Architecture
 
