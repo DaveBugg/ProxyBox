@@ -150,3 +150,7 @@ This project is licensed under the GNU General Public License v3.0. See [LICENSE
 - [AndroidLibXrayLite](https://github.com/2dust/AndroidLibXrayLite) — Android bindings
 - [v2rayNG](https://github.com/2dust/v2rayNG) — reference implementation
 - [v2fly/geoip](https://github.com/v2fly/geoip) — geo databases
+
+## Disclaimer
+
+This project is created solely for educational and research purposes. The author assumes no responsibility for any use of this software. Users are fully responsible for ensuring their use complies with applicable laws and regulations in their jurisdiction.
