@@ -70,30 +70,30 @@ fun ConnectSection(
         label = "border"
     )
     val glowAlpha by animateFloatAsState(
-        if (isConnected) 0.15f else 0f,
+        if (isConnected) 0.12f else 0f,
         animationSpec = tween(600),
         label = "glow"
     )
 
     Column(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Power button
         Box(
             modifier = Modifier
-                .size(140.dp)
+                .size(130.dp)
                 .drawBehind {
                     if (glowAlpha > 0f) {
                         drawCircle(
                             color = Color(0xFF4ADE80),
-                            radius = size.minDimension / 2 + 20.dp.toPx(),
+                            radius = size.minDimension / 2 + 14.dp.toPx(),
                             alpha = glowAlpha
                         )
                     }
                 }
                 .clip(CircleShape)
-                .border(3.dp, borderColor, CircleShape)
+                .border(2.5.dp, borderColor, CircleShape)
                 .background(
                     if (isConnected)
                         Brush.radialGradient(listOf(Color(0xFF0F2A1A), Color(0xFF0A1A10)))
@@ -103,69 +103,91 @@ fun ConnectSection(
                 .clickable(enabled = !isConnecting) { onToggle() },
             contentAlignment = Alignment.Center
         ) {
-            PowerIcon(color = iconColor, modifier = Modifier.size(52.dp))
+            PowerIcon(color = iconColor, modifier = Modifier.size(48.dp))
         }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(20.dp))
 
-        // Status text
-        Text(
-            text = when (vpnState) {
-                VpnState.CONNECTED -> "Connected"
-                VpnState.CONNECTING -> "Connecting..."
-                VpnState.ERROR -> "Connection failed"
-                else -> "Not connected"
-            },
-            color = when (vpnState) {
-                VpnState.CONNECTED -> C.Green
-                VpnState.ERROR -> C.Red
-                else -> Color(0xFF666666)
-            },
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Medium
-        )
-
+        // Status row: left column (status + duration) — right column (speed test)
         if (isConnected) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 32.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Left: status + profile + duration
+                Column {
+                    Text(
+                        "Connected",
+                        color = C.Green,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = CoreService.activeProfileName ?: "",
+                        color = C.GreenDark,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+                    ConnectionDuration()
+                }
+                // Right: speed test
+                SpeedTestChip(onSpeedTest = onSpeedTest)
+            }
+        } else {
+            // Centered status when not connected
             Text(
-                text = CoreService.activeProfileName ?: "",
-                color = C.GreenDark,
-                fontSize = 12.sp,
-                modifier = Modifier.padding(top = 4.dp)
+                text = when (vpnState) {
+                    VpnState.CONNECTING -> "Connecting..."
+                    VpnState.ERROR -> "Connection failed"
+                    else -> "Not connected"
+                },
+                color = when (vpnState) {
+                    VpnState.ERROR -> C.Red
+                    else -> Color(0xFF666666)
+                },
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Medium
             )
-            ConnectionDuration()
-        } else if (!isConnecting && vpnState != VpnState.ERROR) {
-            Text("Tap to connect", color = Color(0xFF444444), fontSize = 12.sp,
-                modifier = Modifier.padding(top = 4.dp))
+            if (!isConnecting && vpnState != VpnState.ERROR) {
+                Text(
+                    "Tap to connect", color = Color(0xFF444444), fontSize = 12.sp,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
+            // Speed test centered when disconnected
+            SpeedTestChip(onSpeedTest = onSpeedTest)
         }
-
-        // Speed test — always visible (uses its own xray instance, independent of VPN)
-        SpeedTestChip(onSpeedTest = onSpeedTest)
     }
 }
 
 @Composable
 private fun PowerIcon(color: Color, modifier: Modifier = Modifier) {
     Canvas(modifier = modifier) {
-        val strokeW = 4.dp.toPx()
+        val strokeW = 3.5.dp.toPx()
         val cx = size.width / 2
         val cy = size.height / 2
         val r = size.minDimension / 2 - strokeW
 
-        // Arc (circle with gap at top)
+        // Arc — gap at top (30° each side of 270°)
         drawArc(
             color = color,
-            startAngle = -240f,
+            startAngle = -60f,
             sweepAngle = 300f,
             useCenter = false,
             style = Stroke(width = strokeW, cap = StrokeCap.Round),
             topLeft = Offset(cx - r, cy - r),
             size = Size(r * 2, r * 2)
         )
-        // Vertical line
+        // Vertical stem
+        val stemTop = cy - r - strokeW * 0.3f
+        val stemBottom = cy - r * 0.05f
         drawLine(
             color = color,
-            start = Offset(cx, cy - r * 0.15f),
-            end = Offset(cx, cy - r - strokeW * 0.5f),
+            start = Offset(cx, stemBottom),
+            end = Offset(cx, stemTop),
             strokeWidth = strokeW,
             cap = StrokeCap.Round
         )
@@ -186,16 +208,13 @@ private fun ConnectionDuration() {
         }
     }
 
-    Column(
-        modifier = Modifier.padding(top = 12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
+    Column(modifier = Modifier.padding(top = 6.dp)) {
         Text(
             String.format("%02d:%02d:%02d", elapsed / 3600, (elapsed % 3600) / 60, elapsed % 60),
             color = C.TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.SemiBold
         )
         Text("duration", color = Color(0xFF555555), fontSize = 11.sp,
-            modifier = Modifier.padding(top = 2.dp))
+            modifier = Modifier.padding(top = 1.dp))
     }
 }
 
