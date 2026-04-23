@@ -14,22 +14,35 @@ import android.widget.ArrayAdapter
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.CheckBox
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import android.app.AlertDialog
+import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import android.content.Context
+import com.dave_cli.proxybox.R
 import com.dave_cli.proxybox.core.CoreService
+import com.dave_cli.proxybox.core.LocaleHelper
 import com.dave_cli.proxybox.core.CoreService.VpnState
 import com.dave_cli.proxybox.core.RoutingPresets
 import com.dave_cli.proxybox.databinding.ActivityTvMainBinding
 import com.dave_cli.proxybox.ui.main.MainActivity
 import com.dave_cli.proxybox.ui.main.MainViewModel
+import com.dave_cli.proxybox.ui.main.SplitTunnelMode
 import com.dave_cli.proxybox.ui.server.LocalServerActivity
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class TvMainActivity : FragmentActivity() {
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LocaleHelper.applyLocale(newBase))
+    }
 
     private lateinit var binding: ActivityTvMainBinding
     private lateinit var viewModel: MainViewModel
@@ -89,12 +102,12 @@ class TvMainActivity : FragmentActivity() {
 
         binding.btnTestConnection.setOnClickListener {
             binding.btnTestConnection.isEnabled = false
-            binding.btnTestConnection.text = "Testing..."
+            binding.btnTestConnection.text = getString(R.string.testing)
             viewModel.testConnection { result ->
                 binding.btnTestConnection.text = result
                 binding.btnTestConnection.isEnabled = true
                 binding.btnTestConnection.postDelayed({
-                    binding.btnTestConnection.text = "Test Connection"
+                    binding.btnTestConnection.text = getString(R.string.test_connection)
                 }, 4000)
             }
         }
@@ -104,16 +117,16 @@ class TvMainActivity : FragmentActivity() {
 
         binding.btnSpeedTest.setOnClickListener {
             binding.btnSpeedTest.isEnabled = false
-            binding.btnSpeedTest.text = "Testing..."
+            binding.btnSpeedTest.text = getString(R.string.testing)
             viewModel.runSpeedTest { mbps, error ->
                 if (mbps != null) {
-                    binding.btnSpeedTest.text = "↓ %.1f Mbps".format(mbps)
+                    binding.btnSpeedTest.text = getString(R.string.speed_result_mbps, mbps)
                 } else {
-                    binding.btnSpeedTest.text = error ?: "Failed"
+                    binding.btnSpeedTest.text = error ?: getString(R.string.speed_failed)
                 }
                 binding.btnSpeedTest.isEnabled = true
                 binding.btnSpeedTest.postDelayed({
-                    binding.btnSpeedTest.text = "⚡ Speed Test"
+                    binding.btnSpeedTest.text = getString(R.string.speed_test)
                 }, 5000)
             }
         }
@@ -122,10 +135,26 @@ class TvMainActivity : FragmentActivity() {
             showRulesDialog()
         }
 
+        binding.btnSplitTunnel.setOnClickListener {
+            showSplitTunnelDialog()
+        }
+
+        updateLanguageButton()
+        binding.btnLanguage.setOnClickListener {
+            val current = LocaleHelper.getSavedLanguage(this)
+            val next = when (current) {
+                "" -> "en"
+                "en" -> "ru"
+                else -> ""
+            }
+            LocaleHelper.saveLanguage(this, next)
+            recreate()
+        }
+
         lifecycleScope.launch {
             viewModel.isPinging.collect { pinging ->
                 binding.btnPingAll.isEnabled = !pinging
-                binding.btnPingAll.text = if (pinging) "Pinging..." else "Ping All"
+                binding.btnPingAll.text = if (pinging) getString(R.string.pinging) else getString(R.string.ping_all)
             }
         }
 
@@ -135,13 +164,13 @@ class TvMainActivity : FragmentActivity() {
 
     private fun showDeleteDialog(name: String, profile: com.dave_cli.proxybox.data.db.ProfileEntity) {
         AlertDialog.Builder(this)
-            .setTitle("Delete Profile")
-            .setMessage("Delete \"$name\"?")
-            .setPositiveButton("Delete") { _, _ ->
+            .setTitle(getString(R.string.delete_profile))
+            .setMessage(getString(R.string.delete_confirm, name))
+            .setPositiveButton(getString(R.string.delete)) { _, _ ->
                 viewModel.deleteProfile(profile)
-                Toast.makeText(this, "Deleted: ${profile.name}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.deleted_toast, profile.name), Toast.LENGTH_SHORT).show()
             }
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton(getString(R.string.cancel), null)
             .show()
     }
 
@@ -184,7 +213,7 @@ class TvMainActivity : FragmentActivity() {
                     if (CoreService.isActive) {
                         Toast.makeText(
                             this@TvMainActivity,
-                            "Reconnect VPN to apply preset",
+                            getString(R.string.reconnect_preset_toast),
                             Toast.LENGTH_SHORT
                         ).show()
                     }
@@ -204,7 +233,7 @@ class TvMainActivity : FragmentActivity() {
             binding.btnUpdateGeo.isEnabled = false
             viewModel.updateGeoFiles { result ->
                 Toast.makeText(this, result, Toast.LENGTH_SHORT).show()
-                binding.btnUpdateGeo.text = "Update Geo DB"
+                binding.btnUpdateGeo.text = getString(R.string.update_geo)
                 binding.btnUpdateGeo.isEnabled = true
             }
         }
@@ -219,16 +248,16 @@ class TvMainActivity : FragmentActivity() {
 
         binding.btnUpdateApp.setOnClickListener {
             binding.btnUpdateApp.isEnabled = false
-            binding.btnUpdateApp.text = "Checking..."
+            binding.btnUpdateApp.text = getString(R.string.checking)
             viewModel.checkForUpdate { result ->
-                binding.btnUpdateApp.text = "Update App"
+                binding.btnUpdateApp.text = getString(R.string.update_app)
                 binding.btnUpdateApp.isEnabled = true
                 if (result.hasUpdate && result.downloadUrl != null) {
                     showUpdateDialog(result.latestVersion, result.releaseNotes, result.downloadUrl)
                 } else if (result.hasUpdate) {
-                    Toast.makeText(this, "Update ${result.latestVersion} found but no APK attached", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this, getString(R.string.update_found_no_apk, result.latestVersion), Toast.LENGTH_LONG).show()
                 } else {
-                    Toast.makeText(this, "You're on the latest version (${result.latestVersion})", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.on_latest_version, result.latestVersion), Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -236,35 +265,35 @@ class TvMainActivity : FragmentActivity() {
 
     private fun showUpdateDialog(version: String, notes: String?, downloadUrl: String) {
         val message = buildString {
-            appendLine("New version: v$version")
+            appendLine(getString(R.string.new_version, version))
             if (!notes.isNullOrBlank()) {
                 appendLine()
                 append(notes)
             }
         }
         AlertDialog.Builder(this)
-            .setTitle("Update Available")
+            .setTitle(getString(R.string.update_available))
             .setMessage(message)
-            .setPositiveButton("Download & Install") { _, _ ->
+            .setPositiveButton(getString(R.string.download_install)) { _, _ ->
                 viewModel.downloadAndInstallUpdate(this, downloadUrl, version)
-                Toast.makeText(this, "Downloading update...", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.downloading_update), Toast.LENGTH_SHORT).show()
             }
-            .setNegativeButton("Later", null)
+            .setNegativeButton(getString(R.string.later), null)
             .show()
     }
 
     private fun showIpCheckDialog() {
         val tv = TextView(this).apply {
-            text = "Checking..."
+            text = getString(R.string.checking)
             setTextColor(0xFFE0E0FF.toInt())
             setPadding(48, 32, 48, 32)
             textSize = 16f
         }
 
         AlertDialog.Builder(this)
-            .setTitle("IP Check — ${viewModel.activePreset.value.displayName}")
+            .setTitle(getString(R.string.ip_check_title, viewModel.activePreset.value.displayName))
             .setView(tv)
-            .setPositiveButton("Close", null)
+            .setPositiveButton(getString(R.string.close), null)
             .show()
 
         lifecycleScope.launch {
@@ -272,7 +301,7 @@ class TvMainActivity : FragmentActivity() {
                 if (results.isNotEmpty()) {
                     val sb = StringBuilder()
                     for (r in results) {
-                        val label = if (r.isRegional) "Regional: ${r.serviceName}" else "Global: ${r.serviceName}"
+                        val label = if (r.isRegional) getString(R.string.ip_regional, r.serviceName) else getString(R.string.ip_global, r.serviceName)
                         val value = r.ip ?: r.error ?: "—"
                         sb.appendLine("$label\n  $value\n")
                     }
@@ -293,12 +322,12 @@ class TvMainActivity : FragmentActivity() {
         container.addView(listContainer)
 
         val dialog = AlertDialog.Builder(this)
-            .setTitle("Routing Rules")
+            .setTitle(getString(R.string.routing_rules))
             .setView(ScrollView(this).apply { addView(container) })
-            .setNeutralButton("Add via Phone") { _, _ ->
+            .setNeutralButton(getString(R.string.add_via_phone)) { _, _ ->
                 startActivity(Intent(this, LocalServerActivity::class.java))
             }
-            .setPositiveButton("Close", null)
+            .setPositiveButton(getString(R.string.close), null)
             .create()
 
         fun refreshList() {
@@ -306,7 +335,7 @@ class TvMainActivity : FragmentActivity() {
             val rules = viewModel.routingRules.value
 
             val noneView = TextView(this@TvMainActivity).apply {
-                text = if (rules.none { it.isSelected }) "  None (no custom rules)" else "  None"
+                text = if (rules.none { it.isSelected }) "  ${getString(R.string.none_no_custom_rules)}" else "  ${getString(R.string.none)}"
                 textSize = 16f
                 setTextColor(if (rules.none { it.isSelected }) 0xFF4ADE80.toInt() else 0xFFE0E0FF.toInt())
                 if (rules.none { it.isSelected }) setTypeface(null, Typeface.BOLD)
@@ -314,7 +343,7 @@ class TvMainActivity : FragmentActivity() {
                 isFocusable = true
                 setOnClickListener {
                     viewModel.selectRoutingRule(null)
-                    Toast.makeText(this@TvMainActivity, "Custom rules disabled", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@TvMainActivity, getString(R.string.custom_rules_disabled), Toast.LENGTH_SHORT).show()
                     dialog.dismiss()
                     reconnectIfActive()
                 }
@@ -344,26 +373,26 @@ class TvMainActivity : FragmentActivity() {
                     isFocusable = true
                     setOnClickListener {
                         viewModel.selectRoutingRule(rule.id)
-                        Toast.makeText(this@TvMainActivity, "Activated: ${rule.name}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@TvMainActivity, getString(R.string.rule_activated, rule.name), Toast.LENGTH_SHORT).show()
                         dialog.dismiss()
                         reconnectIfActive()
                     }
                 }
 
                 val deleteBtn = TextView(this@TvMainActivity).apply {
-                    text = "  Delete  "
+                    text = "  ${getString(R.string.delete)}  "
                     textSize = 14f
                     setTextColor(0xFFF87171.toInt())
                     isFocusable = true
                     setOnClickListener {
                         AlertDialog.Builder(this@TvMainActivity)
-                            .setTitle("Delete \"${rule.name}\"?")
-                            .setPositiveButton("Delete") { _, _ ->
+                            .setTitle(getString(R.string.delete_confirm, rule.name))
+                            .setPositiveButton(getString(R.string.delete)) { _, _ ->
                                 viewModel.deleteRoutingRule(rule)
-                                Toast.makeText(this@TvMainActivity, "Deleted", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(this@TvMainActivity, getString(R.string.delete), Toast.LENGTH_SHORT).show()
                                 dialog.dismiss()
                             }
-                            .setNegativeButton("Cancel", null)
+                            .setNegativeButton(getString(R.string.cancel), null)
                             .show()
                     }
                 }
@@ -375,7 +404,7 @@ class TvMainActivity : FragmentActivity() {
 
             if (rules.isEmpty()) {
                 listContainer.addView(TextView(this@TvMainActivity).apply {
-                    text = "\nNo custom rules imported yet.\nFormat: v2rayN routing rules JSON\nUse \"Add via Phone\" to import."
+                    text = getString(R.string.no_rules_tv)
                     textSize = 14f
                     setTextColor(0xFF888899.toInt())
                 })
@@ -383,6 +412,133 @@ class TvMainActivity : FragmentActivity() {
         }
 
         refreshList()
+        dialog.show()
+    }
+
+    private fun showSplitTunnelDialog() {
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(48, 32, 48, 16)
+        }
+
+        // Mode toggle
+        val modeLabel = TextView(this).apply {
+            textSize = 14f
+            setTextColor(0xFF7C6FFF.toInt())
+        }
+        val modeBtn = TextView(this).apply {
+            textSize = 16f
+            setTextColor(0xFFE0E0FF.toInt())
+            setPadding(0, 16, 0, 16)
+            isFocusable = true
+        }
+
+        fun updateModeViews() {
+            val mode = viewModel.splitTunnelMode.value
+            modeLabel.text = getString(R.string.mode_label)
+            modeBtn.text = when (mode) {
+                SplitTunnelMode.BYPASS -> "▸ ${getString(R.string.bypass_mode_btn)}"
+                SplitTunnelMode.ONLY -> "▸ ${getString(R.string.only_mode_btn)}"
+            }
+        }
+        updateModeViews()
+
+        container.addView(modeLabel)
+        container.addView(modeBtn)
+        container.addView(View(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 1
+            ).apply { topMargin = 8; bottomMargin = 8 }
+            setBackgroundColor(0xFF2A2A4A.toInt())
+        })
+
+        val loadingText = TextView(this).apply {
+            text = getString(R.string.loading_apps)
+            textSize = 14f
+            setTextColor(0xFF888899.toInt())
+        }
+        container.addView(loadingText)
+
+        val listContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+        }
+        container.addView(listContainer)
+
+        var needsReconnect = false
+
+        val dialog = AlertDialog.Builder(this)
+            .setTitle(getString(R.string.split_tunneling))
+            .setView(ScrollView(this).apply { addView(container) })
+            .setPositiveButton(getString(R.string.close), null)
+            .setOnDismissListener {
+                if (needsReconnect) reconnectIfActive()
+            }
+            .create()
+
+        modeBtn.setOnClickListener {
+            val newMode = when (viewModel.splitTunnelMode.value) {
+                SplitTunnelMode.BYPASS -> SplitTunnelMode.ONLY
+                SplitTunnelMode.ONLY -> SplitTunnelMode.BYPASS
+            }
+            viewModel.setSplitTunnelMode(newMode)
+            updateModeViews()
+            needsReconnect = true
+        }
+
+        // Load apps in background
+        lifecycleScope.launch {
+            val apps = withContext(Dispatchers.IO) {
+                val pm = packageManager
+                val ownPkg = packageName
+                pm.getInstalledApplications(PackageManager.GET_META_DATA)
+                    .filter { it.packageName != ownPkg }
+                    .map { info ->
+                        val label = info.loadLabel(pm).toString()
+                        val isSystem = (info.flags and ApplicationInfo.FLAG_SYSTEM) != 0
+                        Triple(info.packageName, label, isSystem)
+                    }
+                    .filter { !it.third }
+                    .sortedWith(
+                        compareByDescending<Triple<String, String, Boolean>> {
+                            it.first in viewModel.splitTunnelPackages.value
+                        }.thenBy { it.second.lowercase() }
+                    )
+            }
+
+            loadingText.visibility = View.GONE
+            for ((pkg, label, _) in apps) {
+                val row = LinearLayout(this@TvMainActivity).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                    setPadding(0, 12, 0, 12)
+                    isFocusable = true
+                }
+
+                val cb = CheckBox(this@TvMainActivity).apply {
+                    isChecked = pkg in viewModel.splitTunnelPackages.value
+                    isFocusable = false
+                }
+
+                val textView = TextView(this@TvMainActivity).apply {
+                    text = "$label\n$pkg"
+                    textSize = 14f
+                    setTextColor(0xFFE0E0FF.toInt())
+                    setPadding(16, 0, 0, 0)
+                    layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                }
+
+                row.setOnClickListener {
+                    viewModel.toggleSplitTunnelApp(pkg)
+                    cb.isChecked = pkg in viewModel.splitTunnelPackages.value
+                    needsReconnect = true
+                }
+
+                row.addView(cb)
+                row.addView(textView)
+                listContainer.addView(row)
+            }
+        }
+
         dialog.show()
     }
 
@@ -410,27 +566,27 @@ class TvMainActivity : FragmentActivity() {
             CoreService.vpnState.collect { state ->
                 when (state) {
                     VpnState.CONNECTED -> {
-                        binding.btnConnect.text = "Disconnect"
+                        binding.btnConnect.text = getString(R.string.disconnect)
                         binding.btnConnect.isEnabled = true
-                        binding.tvStatus.text = "Connected: ${CoreService.activeProfileName ?: ""}"
+                        binding.tvStatus.text = "${getString(R.string.connected)}: ${CoreService.activeProfileName ?: ""}"
                         binding.tvStatus.setTextColor(0xFF4ADE80.toInt())
                     }
                     VpnState.CONNECTING -> {
-                        binding.btnConnect.text = "Connecting..."
+                        binding.btnConnect.text = getString(R.string.connecting)
                         binding.btnConnect.isEnabled = false
-                        binding.tvStatus.text = "Connecting..."
+                        binding.tvStatus.text = getString(R.string.connecting)
                         binding.tvStatus.setTextColor(0xFFAAAACC.toInt())
                     }
                     VpnState.DISCONNECTED -> {
-                        binding.btnConnect.text = "Connect"
+                        binding.btnConnect.text = getString(R.string.connect)
                         binding.btnConnect.isEnabled = true
-                        binding.tvStatus.text = "Not connected"
+                        binding.tvStatus.text = getString(R.string.not_connected)
                         binding.tvStatus.setTextColor(0xFF888888.toInt())
                     }
                     VpnState.ERROR -> {
-                        binding.btnConnect.text = "Connect"
+                        binding.btnConnect.text = getString(R.string.connect)
                         binding.btnConnect.isEnabled = true
-                        binding.tvStatus.text = "Connection failed"
+                        binding.tvStatus.text = getString(R.string.connection_failed)
                         binding.tvStatus.setTextColor(0xFFF87171.toInt())
                     }
                 }
@@ -449,7 +605,7 @@ class TvMainActivity : FragmentActivity() {
                 ?: viewModel.profiles.value.firstOrNull()
 
             if (selected == null) {
-                Toast.makeText(this@TvMainActivity, "Add a profile first", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@TvMainActivity, getString(R.string.add_profile_first), Toast.LENGTH_SHORT).show()
                 return@launch
             }
             if (!selected.isSelected) {
@@ -482,6 +638,11 @@ class TvMainActivity : FragmentActivity() {
                 startVpn()
             }
         }
+    }
+
+    private fun updateLanguageButton() {
+        val lang = LocaleHelper.getSavedLanguage(this)
+        binding.btnLanguage.text = "${getString(R.string.language)}: ${LocaleHelper.getDisplayName(lang)}"
     }
 
     private fun isTV(): Boolean {

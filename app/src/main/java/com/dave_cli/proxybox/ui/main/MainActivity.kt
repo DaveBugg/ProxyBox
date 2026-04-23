@@ -2,6 +2,7 @@ package com.dave_cli.proxybox.ui.main
 
 import android.app.Activity
 import android.app.UiModeManager
+import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.net.VpnService
@@ -11,13 +12,18 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.lifecycleScope
+import com.dave_cli.proxybox.R
 import com.dave_cli.proxybox.core.CoreService
+import com.dave_cli.proxybox.core.LocaleHelper
 import com.dave_cli.proxybox.ui.add.AddProfileActivity
 import com.dave_cli.proxybox.ui.main.theme.ProxyBoxTheme
 import com.dave_cli.proxybox.ui.tv.TvMainActivity
@@ -27,6 +33,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
 class MainActivity : ComponentActivity() {
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LocaleHelper.applyLocale(newBase))
+    }
 
     private val viewModel: MainViewModel by viewModels()
     private var pendingWidgetConnect = false
@@ -49,7 +59,7 @@ class MainActivity : ComponentActivity() {
                     onRuleFileResult?.invoke(json)
                 }
             } catch (e: Exception) {
-                Toast.makeText(this, "Error reading file: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.error_reading_file, e.message ?: ""), Toast.LENGTH_SHORT).show()
             }
         }
         onRuleFileResult = null
@@ -70,14 +80,30 @@ class MainActivity : ComponentActivity() {
         handleWidgetIntent(intent)
 
         setContent {
+            var localeVersion by remember { mutableIntStateOf(0) }
+            val localizedContext = remember(localeVersion) {
+                LocaleHelper.applyLocaleToActivity(this@MainActivity)
+                LocaleHelper.applyLocale(this@MainActivity)
+            }
+
+            CompositionLocalProvider(LocalContext provides localizedContext) {
             ProxyBoxTheme {
             val vpnState by CoreService.vpnState.collectAsState()
             var showSettings by remember { mutableStateOf(false) }
+            var showSplitTunnel by remember { mutableStateOf(false) }
 
-            if (showSettings) {
+            if (showSplitTunnel) {
+                SplitTunnelScreen(
+                    viewModel = viewModel,
+                    onBack = { showSplitTunnel = false },
+                    onReconnect = { reconnectIfActive() },
+                )
+            } else if (showSettings) {
                 SettingsScreen(
                     viewModel = viewModel,
                     onBack = { showSettings = false },
+                    onOpenSplitTunnel = { showSplitTunnel = true },
+                    onLanguageChanged = { localeVersion++ },
                 )
             } else {
                 MainScreen(
@@ -97,13 +123,15 @@ class MainActivity : ComponentActivity() {
                         try {
                             ruleFileLauncher.launch(arrayOf("*/*"))
                         } catch (e: Exception) {
-                            Toast.makeText(this@MainActivity, "No file manager available", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@MainActivity, getString(R.string.no_file_manager), Toast.LENGTH_SHORT).show()
                         }
                     },
                     onReconnect = { reconnectIfActive() },
+                    onOpenSplitTunnel = { showSplitTunnel = true },
                 )
             }
             } // ProxyBoxTheme
+            } // CompositionLocalProvider
         }
     }
 
@@ -112,7 +140,7 @@ class MainActivity : ComponentActivity() {
         // Compose RulesDialog handles naming internally for URL imports.
         // For file imports, prompt the user via an old-style dialog.
         val input = android.widget.EditText(this).apply {
-            hint = "Rule name"
+            hint = getString(R.string.rule_name_hint)
             setTextColor(0xFFE0E0FF.toInt())
             setHintTextColor(0xFF555577.toInt())
             setBackgroundColor(0xFF2A2A4A.toInt())
@@ -123,19 +151,19 @@ class MainActivity : ComponentActivity() {
             addView(input)
         }
         android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-            .setTitle("Name this rule set")
+            .setTitle(getString(R.string.name_rule_set))
             .setView(container)
-            .setPositiveButton("Save") { _, _ ->
-                val name = input.text.toString().trim().ifEmpty { "Custom Rules" }
+            .setPositiveButton(getString(R.string.save)) { _, _ ->
+                val name = input.text.toString().trim().ifEmpty { getString(R.string.default_rule_name) }
                 viewModel.addRoutingRule(name, json) { error ->
                     if (error == null) {
-                        Toast.makeText(this, "Rule set \"$name\" added!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, getString(R.string.rule_added, name), Toast.LENGTH_SHORT).show()
                     } else {
-                        Toast.makeText(this, "Invalid: $error", Toast.LENGTH_LONG).show()
+                        Toast.makeText(this, getString(R.string.rule_invalid, error), Toast.LENGTH_LONG).show()
                     }
                 }
             }
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton(getString(R.string.cancel), null)
             .show()
     }
 

@@ -1,0 +1,173 @@
+<resources>
+    <string name="app_name">ProxyBox</string>
+    <string name="widget_description">Переключение VPN</string>
+    <string name="widget_small_description">Кнопка вкл/выкл VPN</string>
+
+    <!-- Common -->
+    <string name="save">Сохранить</string>
+    <string name="cancel">Отмена</string>
+    <string name="delete">Удалить</string>
+    <string name="close">Закрыть</string>
+    <string name="later">Позже</string>
+    <string name="checking">Проверка…</string>
+
+    <!-- Connect section -->
+    <string name="connected">Подключено</string>
+    <string name="connecting">Подключение…</string>
+    <string name="not_connected">Не подключено</string>
+    <string name="connection_failed">Ошибка подключения</string>
+    <string name="tap_to_connect">Нажмите для подключения</string>
+    <string name="duration">время</string>
+    <string name="speed_test">Тест скорости</string>
+    <string name="testing">Тестирование…</string>
+    <string name="speed_failed">Ошибка</string>
+    <string name="speed_result_mbps">↓ %.1f Мбит/с</string>
+    <string name="disconnect">Отключить</string>
+    <string name="connect">Подключить</string>
+
+    <!-- Main screen -->
+    <string name="profiles_label">ПРОФИЛИ</string>
+    <string name="no_profiles">Нет профилей.\nНажмите + чтобы добавить.</string>
+    <string name="add_profile">Добавить профиль</string>
+    <string name="reconnect_preset_toast">Переподключите VPN для применения</string>
+
+    <!-- Tools section -->
+    <string name="routing_label">МАРШРУТЫ</string>
+    <string name="network_label">СЕТЬ</string>
+    <string name="rules">Правила</string>
+    <string name="apps">Приложения</string>
+    <string name="test">Тест</string>
+    <string name="ping_all">Пинг всех</string>
+    <string name="pinging">Пинг…</string>
+    <string name="ip_check">Проверка IP</string>
+
+    <!-- Profile menu -->
+    <string name="rename">Переименовать</string>
+    <string name="copy_config">Копировать конфиг</string>
+    <string name="share">Поделиться</string>
+    <string name="config_copied">Конфиг скопирован</string>
+    <string name="share_config">Поделиться конфигом</string>
+
+    <!-- Rename dialog -->
+    <string name="rename_profile">Переименовать профиль</string>
+    <string name="profile_name_hint">Имя профиля</string>
+
+    <!-- Delete dialog -->
+    <string name="delete_confirm">Удалить \"%s\"?</string>
+    <string name="deleted_toast">Удалено: %s</string>
+
+    <!-- Rules dialog -->
+    <string name="routing_rules">Правила маршрутизации</string>
+    <string name="none_no_custom_rules">Нет (без пользовательских правил)</string>
+    <string name="none">Нет</string>
+    <string name="rules_count">%s (%d правил)</string>
+    <string name="no_rules_hint">Нет импортированных правил.\nФормат: v2rayN routing rules JSON\nИспользуйте Файл / URL для импорта.</string>
+    <string name="file">Файл</string>
+    <string name="url">URL</string>
+    <string name="rule_added">Набор правил \"%s\" добавлен!</string>
+    <string name="rule_invalid">Ошибка: %s</string>
+    <string name="import_rules_url">Импорт правил по URL</string>
+    <string name="url_placeholder">https://example.com/rules.json</string>
+    <string name="import_btn">Импорт</string>
+    <string name="loading">Загрузка…</string>
+    <string name="download_failed">Не удалось загрузить</string>
+    <string name="name_rule_set">Назовите набор правил</string>
+    <string name="rule_name_hint">Название правила</string>
+    <string name="default_rule_name">Пользовательские правила</string>
+    <string name="custom_rules_disabled">Пользовательские правила отключены</string>
+    <string name="rule_activated">Активировано: %s</string>
+
+    <!-- IP check dialog -->
+    <string name="ip_check_title">Проверка IP — %s</string>
+
+    <!-- Settings -->
+    <string name="settings">Настройки</string>
+    <string name="group_vpn">VPN</string>
+    <string name="split_tunneling">Раздельное туннелирование</string>
+    <string name="split_tunneling_subtitle">Маршрутизация по приложениям</string>
+    <string name="group_updates">ОБНОВЛЕНИЯ</string>
+    <string name="update_app">Обновить приложение</string>
+    <string name="update_app_checking">Проверка…</string>
+    <string name="update_app_subtitle">v%s — нажмите для проверки</string>
+    <string name="update_found_no_apk">Найдено обновление %s, но APK не прикреплён</string>
+    <string name="on_latest_version">У вас последняя версия (%s)</string>
+    <string name="update_geo">Обновить Geo базы</string>
+    <string name="update_geo_subtitle">geoip.dat · geosite.dat</string>
+    <string name="group_about">О ПРИЛОЖЕНИИ</string>
+    <string name="about_subtitle">v%s · VPN-клиент с открытым кодом</string>
+    <string name="github">GitHub</string>
+    <string name="github_url">github.com/DaveBugg/ProxyBox</string>
+    <string name="xray_core">Xray Core</string>
+    <string name="xray_subtitle">На базе XTLS/Xray-core</string>
+    <string name="license">Лицензия</string>
+    <string name="license_value">GPLv3</string>
+    <string name="update_available">Доступно обновление</string>
+    <string name="new_version">Новая версия: v%s</string>
+    <string name="download_install">Скачать и установить</string>
+    <string name="downloading_update">Загрузка обновления…</string>
+
+    <!-- Split tunnel screen -->
+    <string name="bypass_selected">Исключить выбранные</string>
+    <string name="only_selected">Только выбранные</string>
+    <string name="bypass_description">Выбранные приложения будут обходить VPN</string>
+    <string name="only_description">Только выбранные приложения будут использовать VPN (Android 10+)</string>
+    <string name="search_apps">Поиск приложений…</string>
+    <string name="hide_system_apps">Скрыть системные</string>
+    <string name="loading_apps">Загрузка приложений…</string>
+
+    <!-- Notifications -->
+    <string name="notif_channel_name">VPN-подключение</string>
+    <string name="notif_connecting">Подключение…</string>
+    <string name="notif_connected">ProxyBox — Подключено</string>
+
+    <!-- TV -->
+    <string name="tv_title">ProxyBox TV</string>
+    <string name="select_profile">Выберите профиль</string>
+    <string name="no_profiles_tv">Нет профилей. Нажмите «Добавить».</string>
+    <string name="add_config_phone">Добавить через телефон</string>
+    <string name="test_connection">Тест подключения</string>
+    <string name="routing_preset">Шаблон маршрутизации</string>
+    <string name="add_via_phone">Добавить через телефон</string>
+    <string name="no_rules_tv">Нет импортированных правил.\nФормат: v2rayN routing rules JSON\nИспользуйте «Добавить через телефон» для импорта.</string>
+    <string name="delete_profile">Удалить профиль</string>
+    <string name="add_profile_first">Сначала добавьте профиль</string>
+    <string name="mode_label">Режим:</string>
+    <string name="bypass_mode_btn">Исключить выбранные  (нажмите для переключения)</string>
+    <string name="only_mode_btn">Только выбранные  (нажмите для переключения)</string>
+    <string name="no_file_manager">Файловый менеджер недоступен</string>
+    <string name="ip_regional">Региональный: %s</string>
+    <string name="ip_global">Глобальный: %s</string>
+
+    <!-- Language -->
+    <string name="language">Язык</string>
+    <string name="language_system">Системный</string>
+    <string name="language_en">English</string>
+    <string name="language_ru">Русский</string>
+
+    <!-- Add Profile -->
+    <string name="paste_config_hint">Вставьте URL конфига или JSON</string>
+    <string name="enter_name_and_url">Введите имя и URL</string>
+    <string name="subscription_added">Подписка добавлена</string>
+    <string name="config_added">Конфиг добавлен!</string>
+    <string name="invalid_config_format">Неверный формат конфига</string>
+    <string name="no_qr_found">QR-код не найден</string>
+    <string name="error_reading_image">Ошибка чтения изображения</string>
+    <string name="scan_qr_prompt">Сканируйте QR-код прокси</string>
+
+    <!-- Local Server -->
+    <string name="config_via_phone">Конфиг через телефон</string>
+    <string name="stop_server">Остановить сервер</string>
+    <string name="start_server">Запустить сервер</string>
+    <string name="server_stopped">Сервер остановлен</string>
+    <string name="server_start_failed">Не удалось запустить сервер: %s</string>
+    <string name="server_instructions">1. Подключите телефон к той же WiFi-сети\n2. Отсканируйте QR-код камерой телефона\n3. В браузере вставьте конфиг прокси и нажмите Add</string>
+
+    <!-- MainActivity -->
+    <string name="error_reading_file">Ошибка чтения файла: %s</string>
+
+    <!-- Connection test -->
+    <string name="test_ok">OK — %dмс</string>
+    <string name="test_http_error">HTTP %1$d — %2$dмс</string>
+    <string name="test_fail">ОШИБКА — %s</string>
+    <string name="no_profile_selected">Профиль не выбран</string>
+</resources>

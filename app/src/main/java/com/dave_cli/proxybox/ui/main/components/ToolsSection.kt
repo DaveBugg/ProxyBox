@@ -20,7 +20,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.sp
+import com.dave_cli.proxybox.R
 import com.dave_cli.proxybox.core.RoutingPreset
 import com.dave_cli.proxybox.core.RoutingPresets
 import com.dave_cli.proxybox.ui.main.theme.C
@@ -33,6 +35,7 @@ fun ToolsSection(
     onPresetSelected: (RoutingPreset) -> Unit,
     onPresetMenuDismiss: () -> Unit,
     onRules: () -> Unit,
+    onApps: () -> Unit,
     testResult: String?,
     isTesting: Boolean,
     onTest: () -> Unit,
@@ -43,7 +46,7 @@ fun ToolsSection(
     Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) {
         // ROUTING row
         Row(verticalAlignment = Alignment.CenterVertically) {
-            SectionLabel("ROUTING")
+            SectionIcon("\uD83D\uDD00")
             Spacer(Modifier.width(8.dp))
             Box {
                 ToolChip(
@@ -64,43 +67,42 @@ fun ToolsSection(
                 }
             }
             Spacer(Modifier.width(6.dp))
-            ToolChip("Rules", C.Green, onRules)
+            ToolChip(stringResource(R.string.rules), C.Green, onRules)
+            Spacer(Modifier.width(6.dp))
+            ToolChip(stringResource(R.string.apps), C.Violet, onApps)
         }
 
         Spacer(Modifier.padding(top = 8.dp))
 
         // NETWORK row
         Row(verticalAlignment = Alignment.CenterVertically) {
-            SectionLabel("NETWORK")
+            SectionIcon("\uD83C\uDF10")
             Spacer(Modifier.width(8.dp))
             ToolChip(
-                text = if (isTesting) "..." else (testResult ?: "Test"),
+                text = if (isTesting) "..." else (testResult ?: stringResource(R.string.test)),
                 color = C.Green,
                 onClick = onTest,
                 enabled = !isTesting
             )
             Spacer(Modifier.width(6.dp))
             ToolChip(
-                text = if (isPinging) "..." else "Ping All",
+                text = if (isPinging) "..." else stringResource(R.string.ping_all),
                 color = C.Violet,
                 onClick = onPingAll,
                 enabled = !isPinging
             )
             Spacer(Modifier.width(6.dp))
-            ToolChip("IP Check", C.Amber, onIpCheck)
+            ToolChip(stringResource(R.string.ip_check), C.Amber, onIpCheck)
         }
     }
 }
 
 @Composable
-private fun SectionLabel(text: String) {
+private fun SectionIcon(icon: String) {
     Text(
-        text = text,
-        color = C.Primary,
-        fontSize = 10.sp,
-        fontWeight = FontWeight.SemiBold,
-        letterSpacing = 1.2.sp,
-        modifier = Modifier.width(60.dp)
+        text = icon,
+        fontSize = 16.sp,
+        modifier = Modifier.width(32.dp)
     )
 }
 

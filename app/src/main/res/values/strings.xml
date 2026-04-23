@@ -2,4 +2,172 @@
     <string name="app_name">ProxyBox</string>
     <string name="widget_description">Toggle VPN connection</string>
     <string name="widget_small_description">VPN on/off button</string>
+
+    <!-- Common -->
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="close">Close</string>
+    <string name="later">Later</string>
+    <string name="checking">Checking…</string>
+
+    <!-- Connect section -->
+    <string name="connected">Connected</string>
+    <string name="connecting">Connecting…</string>
+    <string name="not_connected">Not connected</string>
+    <string name="connection_failed">Connection failed</string>
+    <string name="tap_to_connect">Tap to connect</string>
+    <string name="duration">duration</string>
+    <string name="speed_test">Speed Test</string>
+    <string name="testing">Testing…</string>
+    <string name="speed_failed">Failed</string>
+    <string name="speed_result_mbps">↓ %.1f Mbps</string>
+    <string name="disconnect">Disconnect</string>
+    <string name="connect">Connect</string>
+
+    <!-- Main screen -->
+    <string name="profiles_label">PROFILES</string>
+    <string name="no_profiles">No profiles yet.\nTap + to add a config.</string>
+    <string name="add_profile">Add Profile</string>
+    <string name="reconnect_preset_toast">Reconnect VPN to apply preset</string>
+
+    <!-- Tools section -->
+    <string name="routing_label">ROUTING</string>
+    <string name="network_label">NETWORK</string>
+    <string name="rules">Rules</string>
+    <string name="apps">Apps</string>
+    <string name="test">Test</string>
+    <string name="ping_all">Ping All</string>
+    <string name="pinging">Pinging…</string>
+    <string name="ip_check">IP Check</string>
+
+    <!-- Profile menu -->
+    <string name="rename">Rename</string>
+    <string name="copy_config">Copy config</string>
+    <string name="share">Share</string>
+    <string name="config_copied">Config copied</string>
+    <string name="share_config">Share config</string>
+
+    <!-- Rename dialog -->
+    <string name="rename_profile">Rename profile</string>
+    <string name="profile_name_hint">Profile name</string>
+
+    <!-- Delete dialog -->
+    <string name="delete_confirm">Delete \"%s\"?</string>
+    <string name="deleted_toast">Deleted: %s</string>
+
+    <!-- Rules dialog -->
+    <string name="routing_rules">Routing Rules</string>
+    <string name="none_no_custom_rules">None (no custom rules)</string>
+    <string name="none">None</string>
+    <string name="rules_count">%s (%d rules)</string>
+    <string name="no_rules_hint">No custom rules imported yet.\nFormat: v2rayN routing rules JSON\nUse File / URL below to import.</string>
+    <string name="file">File</string>
+    <string name="url">URL</string>
+    <string name="rule_added">Rule set \"%s\" added!</string>
+    <string name="rule_invalid">Invalid: %s</string>
+    <string name="import_rules_url">Import Rules from URL</string>
+    <string name="url_placeholder">https://example.com/rules.json</string>
+    <string name="import_btn">Import</string>
+    <string name="loading">Loading…</string>
+    <string name="download_failed">Failed to download</string>
+    <string name="name_rule_set">Name this rule set</string>
+    <string name="rule_name_hint">Rule name</string>
+    <string name="default_rule_name">Custom Rules</string>
+    <string name="custom_rules_disabled">Custom rules disabled</string>
+    <string name="rule_activated">Activated: %s</string>
+
+    <!-- IP check dialog -->
+    <string name="ip_check_title">IP Check — %s</string>
+
+    <!-- Settings -->
+    <string name="settings">Settings</string>
+    <string name="group_vpn">VPN</string>
+    <string name="split_tunneling">Split Tunneling</string>
+    <string name="split_tunneling_subtitle">Per-app VPN routing</string>
+    <string name="group_updates">UPDATES</string>
+    <string name="update_app">Update App</string>
+    <string name="update_app_checking">Checking…</string>
+    <string name="update_app_subtitle">v%s — tap to check</string>
+    <string name="update_found_no_apk">Update %s found but no APK attached</string>
+    <string name="on_latest_version">You\'re on the latest version (%s)</string>
+    <string name="update_geo">Update Geo Databases</string>
+    <string name="update_geo_subtitle">geoip.dat · geosite.dat</string>
+    <string name="group_about">ABOUT</string>
+    <string name="about_subtitle">v%s · Open-source VPN client</string>
+    <string name="github">GitHub</string>
+    <string name="github_url">github.com/DaveBugg/ProxyBox</string>
+    <string name="xray_core">Xray Core</string>
+    <string name="xray_subtitle">Powered by XTLS/Xray-core</string>
+    <string name="license">License</string>
+    <string name="license_value">GPLv3</string>
+    <string name="update_available">Update Available</string>
+    <string name="new_version">New version: v%s</string>
+    <string name="download_install">Download &amp; Install</string>
+    <string name="downloading_update">Downloading update…</string>
+
+    <!-- Split tunnel screen -->
+    <string name="bypass_selected">Bypass selected</string>
+    <string name="only_selected">Only selected</string>
+    <string name="bypass_description">Selected apps will bypass the VPN</string>
+    <string name="only_description">Only selected apps will use the VPN (Android 10+)</string>
+    <string name="search_apps">Search apps…</string>
+    <string name="hide_system_apps">Hide system apps</string>
+    <string name="loading_apps">Loading apps…</string>
+
+    <!-- Notifications -->
+    <string name="notif_channel_name">VPN Connection</string>
+    <string name="notif_connecting">Connecting…</string>
+    <string name="notif_connected">ProxyBox — Connected</string>
+
+    <!-- TV -->
+    <string name="tv_title">ProxyBox TV</string>
+    <string name="select_profile">Select Profile</string>
+    <string name="no_profiles_tv">No profiles. Click Add Config.</string>
+    <string name="add_config_phone">Add Config via Phone</string>
+    <string name="test_connection">Test Connection</string>
+    <string name="routing_preset">Routing Preset</string>
+    <string name="add_via_phone">Add via Phone</string>
+    <string name="no_rules_tv">No custom rules imported yet.\nFormat: v2rayN routing rules JSON\nUse \"Add via Phone\" to import.</string>
+    <string name="delete_profile">Delete Profile</string>
+    <string name="add_profile_first">Add a profile first</string>
+    <string name="mode_label">Mode:</string>
+    <string name="bypass_mode_btn">Bypass selected  (tap to switch)</string>
+    <string name="only_mode_btn">Only selected  (tap to switch)</string>
+    <string name="no_file_manager">No file manager available</string>
+    <string name="ip_regional">Regional: %s</string>
+    <string name="ip_global">Global: %s</string>
+
+    <!-- Language -->
+    <string name="language">Language</string>
+    <string name="language_system">System</string>
+    <string name="language_en">English</string>
+    <string name="language_ru">Русский</string>
+
+    <!-- Add Profile -->
+    <string name="paste_config_hint">Paste a config URL or JSON</string>
+    <string name="enter_name_and_url">Enter name and URL</string>
+    <string name="subscription_added">Subscription added</string>
+    <string name="config_added">Config added!</string>
+    <string name="invalid_config_format">Invalid config format</string>
+    <string name="no_qr_found">No QR code found in image</string>
+    <string name="error_reading_image">Error reading image</string>
+    <string name="scan_qr_prompt">Scan proxy QR code</string>
+
+    <!-- Local Server -->
+    <string name="config_via_phone">Config via Phone</string>
+    <string name="stop_server">Stop Server</string>
+    <string name="start_server">Start Server</string>
+    <string name="server_stopped">Server stopped</string>
+    <string name="server_start_failed">Failed to start server: %s</string>
+    <string name="server_instructions">1. Connect your phone to the same WiFi\n2. Scan the QR code below with your phone camera\n3. In the browser, paste your proxy config and tap Add</string>
+
+    <!-- MainActivity -->
+    <string name="error_reading_file">Error reading file: %s</string>
+
+    <!-- Connection test -->
+    <string name="test_ok">OK — %dms</string>
+    <string name="test_http_error">HTTP %1$d — %2$dms</string>
+    <string name="test_fail">FAIL — %s</string>
+    <string name="no_profile_selected">No profile selected</string>
 </resources>

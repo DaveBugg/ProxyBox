@@ -1,13 +1,20 @@
 package com.dave_cli.proxybox.ui.server
 
+import android.content.Context
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.dave_cli.proxybox.databinding.ActivityLocalServerBinding
+import com.dave_cli.proxybox.R
+import com.dave_cli.proxybox.core.LocaleHelper
 import com.dave_cli.proxybox.server.LocalConfigServer
 import com.dave_cli.proxybox.server.QrGenerator
 
 class LocalServerActivity : AppCompatActivity() {
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LocaleHelper.applyLocale(newBase))
+    }
 
     private lateinit var binding: ActivityLocalServerBinding
     private var server: LocalConfigServer? = null
@@ -18,7 +25,7 @@ class LocalServerActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        title = "Config via Phone"
+        title = getString(R.string.config_via_phone)
 
         startServer()
 
@@ -42,24 +49,21 @@ class LocalServerActivity : AppCompatActivity() {
             server!!.start()
             val url = server!!.getServerUrl()
             binding.tvServerUrl.text = url
-            binding.tvInstructions.text =
-                "1. Connect your phone to the same WiFi\n" +
-                "2. Scan the QR code below with your phone camera\n" +
-                "3. In the browser, paste your proxy config and tap Add"
+            binding.tvInstructions.text = getString(R.string.server_instructions)
             val qr = QrGenerator.generate(url)
             binding.ivQrCode.setImageBitmap(qr)
-            binding.btnToggleServer.text = "Stop Server"
+            binding.btnToggleServer.text = getString(R.string.stop_server)
         } catch (e: Exception) {
-            Toast.makeText(this, "Failed to start server: ${e.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, getString(R.string.server_start_failed, e.message ?: ""), Toast.LENGTH_LONG).show()
         }
     }
 
     private fun stopServer() {
         server?.stop()
         server = null
-        binding.tvServerUrl.text = "Server stopped"
+        binding.tvServerUrl.text = getString(R.string.server_stopped)
         binding.ivQrCode.setImageDrawable(null)
-        binding.btnToggleServer.text = "Start Server"
+        binding.btnToggleServer.text = getString(R.string.start_server)
     }
 
     override fun onDestroy() {

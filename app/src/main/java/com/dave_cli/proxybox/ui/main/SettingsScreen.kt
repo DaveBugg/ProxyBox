@@ -37,8 +37,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.sp
 import com.dave_cli.proxybox.BuildConfig
+import com.dave_cli.proxybox.R
+import com.dave_cli.proxybox.core.LocaleHelper
 import com.dave_cli.proxybox.core.UpdateResult
 import com.dave_cli.proxybox.ui.main.theme.C
 
@@ -46,6 +49,8 @@ import com.dave_cli.proxybox.ui.main.theme.C
 fun SettingsScreen(
     viewModel: MainViewModel,
     onBack: () -> Unit,
+    onOpenSplitTunnel: () -> Unit = {},
+    onLanguageChanged: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val isUpdatingGeo by viewModel.isUpdatingGeo.collectAsState()
@@ -78,26 +83,56 @@ fun SettingsScreen(
                     .padding(8.dp)
             )
             Spacer(Modifier.width(8.dp))
-            Text("Settings", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = C.TextPrimary)
+            Text(stringResource(R.string.settings), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = C.TextPrimary)
         }
 
+        // VPN
+        GroupLabel(stringResource(R.string.group_vpn))
+
+        SettingsItem(
+            icon = "\uD83D\uDD00",
+            iconColor = C.Violet,
+            title = stringResource(R.string.split_tunneling),
+            subtitle = stringResource(R.string.split_tunneling_subtitle),
+            onClick = onOpenSplitTunnel,
+        )
+
+        // LANGUAGE
+        val currentLang = LocaleHelper.getSavedLanguage(context)
+        val langLabel = LocaleHelper.getDisplayName(currentLang)
+        SettingsItem(
+            icon = "\uD83C\uDF10",
+            iconColor = C.Amber,
+            title = stringResource(R.string.language),
+            subtitle = langLabel,
+            onClick = {
+                val next = when (currentLang) {
+                    "" -> "en"
+                    "en" -> "ru"
+                    else -> ""
+                }
+                LocaleHelper.saveLanguage(context, next)
+                onLanguageChanged()
+            },
+        )
+
         // UPDATES
-        GroupLabel("UPDATES")
+        GroupLabel(stringResource(R.string.group_updates))
 
         SettingsItem(
             icon = "\u2193",
             iconColor = C.Pink,
-            title = "Update App",
-            subtitle = if (isCheckingUpdate) "Checking..."
-            else "v${BuildConfig.VERSION_NAME} \u2014 tap to check",
+            title = stringResource(R.string.update_app),
+            subtitle = if (isCheckingUpdate) stringResource(R.string.update_app_checking)
+            else stringResource(R.string.update_app_subtitle, BuildConfig.VERSION_NAME),
             onClick = {
                 viewModel.checkForUpdate { result ->
                     if (result.hasUpdate && result.downloadUrl != null) {
                         updateResult = result
                     } else if (result.hasUpdate) {
-                        Toast.makeText(context, "Update ${result.latestVersion} found but no APK attached", Toast.LENGTH_LONG).show()
+                        Toast.makeText(context, context.getString(R.string.update_found_no_apk, result.latestVersion), Toast.LENGTH_LONG).show()
                     } else {
-                        Toast.makeText(context, "You're on the latest version (${result.latestVersion})", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.on_latest_version, result.latestVersion), Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -106,9 +141,9 @@ fun SettingsScreen(
         SettingsItem(
             icon = "\uD83C\uDF0D",
             iconColor = C.Blue,
-            title = "Update Geo Databases",
+            title = stringResource(R.string.update_geo),
             subtitle = if (isUpdatingGeo && geoProgress.isNotEmpty()) geoProgress
-            else "geoip.dat \u00B7 geosite.dat",
+            else stringResource(R.string.update_geo_subtitle),
             onClick = {
                 viewModel.updateGeoFiles { result ->
                     Toast.makeText(context, result, Toast.LENGTH_SHORT).show()
@@ -117,21 +152,21 @@ fun SettingsScreen(
         )
 
         // ABOUT
-        GroupLabel("ABOUT")
+        GroupLabel(stringResource(R.string.group_about))
 
         SettingsItem(
             icon = "\u25C6",
             iconColor = C.Primary,
             title = "ProxyBox",
-            subtitle = "v${BuildConfig.VERSION_NAME} \u00B7 Open-source VPN client",
+            subtitle = stringResource(R.string.about_subtitle, BuildConfig.VERSION_NAME),
             showArrow = false,
         )
 
         SettingsItem(
             icon = "\u2B21",
             iconColor = C.TextPrimary,
-            title = "GitHub",
-            subtitle = "github.com/DaveBugg/ProxyBox",
+            title = stringResource(R.string.github),
+            subtitle = stringResource(R.string.github_url),
             subtitleColor = C.Primary,
             onClick = {
                 context.startActivity(
@@ -143,16 +178,16 @@ fun SettingsScreen(
         SettingsItem(
             icon = "\u26A1",
             iconColor = C.Green,
-            title = "Xray Core",
-            subtitle = "Powered by XTLS/Xray-core",
+            title = stringResource(R.string.xray_core),
+            subtitle = stringResource(R.string.xray_subtitle),
             showArrow = false,
         )
 
         SettingsItem(
             icon = "\uD83D\uDCDC",
             iconColor = C.Amber,
-            title = "License",
-            subtitle = "GPLv3",
+            title = stringResource(R.string.license),
+            subtitle = stringResource(R.string.license_value),
             showArrow = false,
         )
     }
@@ -161,10 +196,10 @@ fun SettingsScreen(
     updateResult?.let { result ->
         AlertDialog(
             onDismissRequest = { updateResult = null },
-            title = { Text("Update Available", color = C.TextPrimary) },
+            title = { Text(stringResource(R.string.update_available), color = C.TextPrimary) },
             text = {
                 Column {
-                    Text("New version: v${result.latestVersion}", color = C.TextPrimary, fontSize = 14.sp)
+                    Text(stringResource(R.string.new_version, result.latestVersion), color = C.TextPrimary, fontSize = 14.sp)
                     if (!result.releaseNotes.isNullOrBlank()) {
                         Spacer(Modifier.height(8.dp))
                         Text(result.releaseNotes, color = C.TextSecondary, fontSize = 13.sp)
@@ -174,12 +209,12 @@ fun SettingsScreen(
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.downloadAndInstallUpdate(context, result.downloadUrl!!, result.latestVersion)
-                    Toast.makeText(context, "Downloading update...", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(R.string.downloading_update), Toast.LENGTH_SHORT).show()
                     updateResult = null
-                }) { Text("Download & Install", color = C.Primary) }
+                }) { Text(stringResource(R.string.download_install), color = C.Primary) }
             },
             dismissButton = {
-                TextButton(onClick = { updateResult = null }) { Text("Later", color = C.TextSecondary) }
+                TextButton(onClick = { updateResult = null }) { Text(stringResource(R.string.later), color = C.TextSecondary) }
             },
             containerColor = C.SurfaceVariant,
         )

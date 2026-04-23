@@ -15,6 +15,9 @@ import com.dave_cli.proxybox.data.repository.ProfileRepository
 import com.dave_cli.proxybox.databinding.ActivityAddProfileBinding
 import com.dave_cli.proxybox.import_config.ConfigParser
 import com.dave_cli.proxybox.import_config.QrDecoder
+import android.content.Context
+import com.dave_cli.proxybox.R
+import com.dave_cli.proxybox.core.LocaleHelper
 import com.dave_cli.proxybox.ui.main.MainViewModel
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
@@ -23,6 +26,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class AddProfileActivity : AppCompatActivity() {
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LocaleHelper.applyLocale(newBase))
+    }
 
     private lateinit var binding: ActivityAddProfileBinding
     private val viewModel: MainViewModel by viewModels()
@@ -49,12 +56,12 @@ class AddProfileActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        title = "Add Profile"
+        title = getString(R.string.add_profile)
 
         binding.btnImportText.setOnClickListener {
             val text = binding.etConfig.text.toString().trim()
             if (text.isNotEmpty()) importString(text)
-            else Toast.makeText(this, "Paste a config URL or JSON", Toast.LENGTH_SHORT).show()
+            else Toast.makeText(this, getString(R.string.paste_config_hint), Toast.LENGTH_SHORT).show()
         }
 
         binding.btnScanQr.setOnClickListener {
@@ -74,16 +81,16 @@ class AddProfileActivity : AppCompatActivity() {
             val name = binding.etSubName.text.toString().trim()
             val url  = binding.etSubUrl.text.toString().trim()
             if (name.isEmpty() || url.isEmpty()) {
-                Toast.makeText(this, "Enter name and URL", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.enter_name_and_url), Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             viewModel.addSubscription(name, url) { ok ->
                 runOnUiThread {
                     if (ok) {
-                        Toast.makeText(this, "Subscription added", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, getString(R.string.subscription_added), Toast.LENGTH_SHORT).show()
                         finish()
                     } else {
-                        Toast.makeText(this, "Failed to fetch subscription", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, getString(R.string.download_failed), Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -94,10 +101,10 @@ class AddProfileActivity : AppCompatActivity() {
         viewModel.addProfileFromString(text) { ok ->
             runOnUiThread {
                 if (ok) {
-                    Toast.makeText(this, "Config added!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.config_added), Toast.LENGTH_SHORT).show()
                     finish()
                 } else {
-                    Toast.makeText(this, "Invalid config format", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.invalid_config_format), Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -110,16 +117,16 @@ class AddProfileActivity : AppCompatActivity() {
             stream.close()
             val text = QrDecoder.decode(bitmap)
             if (text != null) importString(text)
-            else Toast.makeText(this, "No QR code found in image", Toast.LENGTH_SHORT).show()
+            else Toast.makeText(this, getString(R.string.no_qr_found), Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
-            Toast.makeText(this, "Error reading image", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.error_reading_image), Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun launchQrCamera() {
         val options = ScanOptions().apply {
             setDesiredBarcodeFormats(ScanOptions.QR_CODE)
-            setPrompt("Scan proxy QR code")
+            setPrompt(getString(R.string.scan_qr_prompt))
             setBeepEnabled(false)
             setOrientationLocked(false)
         }

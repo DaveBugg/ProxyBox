@@ -33,7 +33,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.sp
+import com.dave_cli.proxybox.R
 import com.dave_cli.proxybox.core.CoreService
 import com.dave_cli.proxybox.core.CoreService.VpnState
 import com.dave_cli.proxybox.data.db.ProfileEntity
@@ -56,6 +58,7 @@ fun MainScreen(
     onOpenSettings: () -> Unit,
     onPickRuleFile: () -> Unit,
     onReconnect: () -> Unit,
+    onOpenSplitTunnel: () -> Unit = {},
 ) {
     val profiles by viewModel.profiles.collectAsState()
     val activePreset by viewModel.activePreset.collectAsState()
@@ -127,11 +130,12 @@ fun MainScreen(
                 viewModel.setActivePreset(preset)
                 showPresetMenu = false
                 if (CoreService.isActive) {
-                    Toast.makeText(context, "Reconnect VPN to apply preset", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(R.string.reconnect_preset_toast), Toast.LENGTH_SHORT).show()
                 }
             },
             onPresetMenuDismiss = { showPresetMenu = false },
             onRules = { showRulesDialog = true },
+            onApps = onOpenSplitTunnel,
             testResult = testResult,
             isTesting = isTesting,
             onTest = {
@@ -154,7 +158,7 @@ fun MainScreen(
 
         // Profiles label
         Text(
-            "PROFILES",
+            stringResource(R.string.profiles_label),
             color = C.Primary,
             fontSize = 11.sp,
             fontWeight = FontWeight.SemiBold,
@@ -169,7 +173,7 @@ fun MainScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    "No profiles yet.\nTap + to add a config.",
+                    stringResource(R.string.no_profiles),
                     color = C.TextDim, fontSize = 14.sp,
                     textAlign = TextAlign.Center,
                 )
@@ -202,7 +206,7 @@ fun MainScreen(
             ) {
                 Text("+", fontSize = 20.sp, fontWeight = FontWeight.Normal)
                 Spacer(Modifier.width(6.dp))
-                Text("Add Profile", fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.add_profile), fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
             }
         }
     }

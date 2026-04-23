@@ -35,7 +35,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.sp
+import com.dave_cli.proxybox.R
 import com.dave_cli.proxybox.data.db.RoutingRuleEntity
 import com.dave_cli.proxybox.ui.main.IpCheckResult
 import com.dave_cli.proxybox.ui.main.theme.C
@@ -89,22 +91,22 @@ fun RenameDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Rename profile", color = C.TextPrimary) },
+        title = { Text(stringResource(R.string.rename_profile), color = C.TextPrimary) },
         text = {
             ProxyBoxTextField(
                 value = text,
                 onValueChange = { text = it },
-                placeholder = "Profile name"
+                placeholder = stringResource(R.string.profile_name_hint)
             )
         },
         confirmButton = {
             TextButton(onClick = {
                 val name = text.trim()
                 if (name.isNotEmpty()) onConfirm(name)
-            }) { Text("Save", color = C.Primary) }
+            }) { Text(stringResource(R.string.save), color = C.Primary) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel", color = C.TextSecondary) }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel), color = C.TextSecondary) }
         },
         containerColor = C.SurfaceVariant,
     )
@@ -120,12 +122,12 @@ fun DeleteConfirmDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Delete \"$name\"?", color = C.TextPrimary) },
+        title = { Text(stringResource(R.string.delete_confirm, name), color = C.TextPrimary) },
         confirmButton = {
-            TextButton(onClick = onConfirm) { Text("Delete", color = C.Red) }
+            TextButton(onClick = onConfirm) { Text(stringResource(R.string.delete), color = C.Red) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel", color = C.TextSecondary) }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel), color = C.TextSecondary) }
         },
         containerColor = C.SurfaceVariant,
     )
@@ -164,9 +166,9 @@ fun RulesDialog(
                 onConfirm = { name ->
                     onAddRule(name, p.json) { error ->
                         if (error == null) {
-                            Toast.makeText(context, "Rule set \"$name\" added!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, context.getString(R.string.rule_added, name), Toast.LENGTH_SHORT).show()
                         } else {
-                            Toast.makeText(context, "Invalid: $error", Toast.LENGTH_LONG).show()
+                            Toast.makeText(context, context.getString(R.string.rule_invalid, error), Toast.LENGTH_LONG).show()
                         }
                     }
                     page = RulesPage.List
@@ -177,7 +179,7 @@ fun RulesDialog(
         is RulesPage.List -> {
             AlertDialog(
                 onDismissRequest = onDismiss,
-                title = { Text("Routing Rules", color = C.TextPrimary) },
+                title = { Text(stringResource(R.string.routing_rules), color = C.TextPrimary) },
                 text = {
                     Column(
                         Modifier
@@ -186,8 +188,9 @@ fun RulesDialog(
                     ) {
                         // None option
                         val noneSelected = rules.none { it.isSelected }
+                        val noneLabel = if (noneSelected) "\u2713 ${stringResource(R.string.none_no_custom_rules)}" else "  ${stringResource(R.string.none)}"
                         Text(
-                            text = if (noneSelected) "\u2713 None (no custom rules)" else "  None",
+                            text = noneLabel,
                             color = if (noneSelected) C.Green else C.TextPrimary,
                             fontWeight = if (noneSelected) FontWeight.Bold else FontWeight.Normal,
                             fontSize = 14.sp,
@@ -221,7 +224,7 @@ fun RulesDialog(
 
                         if (rules.isEmpty()) {
                             Text(
-                                "\nNo custom rules imported yet.\nFormat: v2rayN routing rules JSON\nUse File / URL below to import.",
+                                stringResource(R.string.no_rules_hint),
                                 color = C.TextSecondary, fontSize = 13.sp,
                                 modifier = Modifier.padding(top = 8.dp)
                             )
@@ -229,17 +232,17 @@ fun RulesDialog(
                     }
                 },
                 confirmButton = {
-                    TextButton(onClick = onDismiss) { Text("Close") }
+                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) }
                 },
                 dismissButton = {
                     Row {
                         TextButton(onClick = {
                             onDismiss()
                             onImportFromFile()
-                        }) { Text("File", color = C.Blue) }
+                        }) { Text(stringResource(R.string.file), color = C.Blue) }
                         Spacer(Modifier.width(4.dp))
                         TextButton(onClick = { page = RulesPage.ImportUrl }) {
-                            Text("URL", color = C.Violet)
+                            Text(stringResource(R.string.url), color = C.Violet)
                         }
                     }
                 },
@@ -252,15 +255,15 @@ fun RulesDialog(
     deleteTarget?.let { rule ->
         AlertDialog(
             onDismissRequest = { deleteTarget = null },
-            title = { Text("Delete \"${rule.name}\"?", color = C.TextPrimary) },
+            title = { Text(stringResource(R.string.delete_confirm, rule.name), color = C.TextPrimary) },
             confirmButton = {
                 TextButton(onClick = {
                     onDeleteRule(rule)
                     deleteTarget = null
-                }) { Text("Delete", color = C.Red) }
+                }) { Text(stringResource(R.string.delete), color = C.Red) }
             },
             dismissButton = {
-                TextButton(onClick = { deleteTarget = null }) { Text("Cancel", color = C.TextSecondary) }
+                TextButton(onClick = { deleteTarget = null }) { Text(stringResource(R.string.cancel), color = C.TextSecondary) }
             },
             containerColor = C.SurfaceVariant,
         )
@@ -275,16 +278,17 @@ private fun ImportUrlDialog(onImport: (String) -> Unit, onDismiss: () -> Unit) {
     var isLoading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     AlertDialog(
         onDismissRequest = { if (!isLoading) onDismiss() },
-        title = { Text("Import Rules from URL", color = C.TextPrimary) },
+        title = { Text(stringResource(R.string.import_rules_url), color = C.TextPrimary) },
         text = {
             Column {
                 ProxyBoxTextField(
                     value = url,
                     onValueChange = { url = it; error = null },
-                    placeholder = "https://example.com/rules.json"
+                    placeholder = stringResource(R.string.url_placeholder)
                 )
                 error?.let {
                     Text(it, color = C.Red, fontSize = 12.sp, modifier = Modifier.padding(top = 4.dp))
@@ -304,15 +308,15 @@ private fun ImportUrlDialog(onImport: (String) -> Unit, onDismiss: () -> Unit) {
                             }
                         }
                         isLoading = false
-                        if (json != null) onImport(json) else error = "Failed to download"
+                        if (json != null) onImport(json) else error = context.getString(R.string.download_failed)
                     }
                 },
                 enabled = url.isNotBlank() && !isLoading
-            ) { Text(if (isLoading) "Loading..." else "Import", color = C.Primary) }
+            ) { Text(if (isLoading) stringResource(R.string.loading) else stringResource(R.string.import_btn), color = C.Primary) }
         },
         dismissButton = {
             TextButton(onClick = onDismiss, enabled = !isLoading) {
-                Text("Cancel", color = C.TextSecondary)
+                Text(stringResource(R.string.cancel), color = C.TextSecondary)
             }
         },
         containerColor = C.SurfaceVariant,
@@ -327,21 +331,22 @@ private fun NameRuleDialog(onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Name this rule set", color = C.TextPrimary) },
+        title = { Text(stringResource(R.string.name_rule_set), color = C.TextPrimary) },
         text = {
             ProxyBoxTextField(
                 value = name,
                 onValueChange = { name = it },
-                placeholder = "Rule name"
+                placeholder = stringResource(R.string.rule_name_hint)
             )
         },
         confirmButton = {
+            val defaultName = stringResource(R.string.default_rule_name)
             TextButton(onClick = {
-                onConfirm(name.trim().ifEmpty { "Custom Rules" })
-            }) { Text("Save", color = C.Primary) }
+                onConfirm(name.trim().ifEmpty { defaultName })
+            }) { Text(stringResource(R.string.save), color = C.Primary) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel", color = C.TextSecondary) }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel), color = C.TextSecondary) }
         },
         containerColor = C.SurfaceVariant,
     )
@@ -359,11 +364,11 @@ fun IpCheckDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("IP Check \u2014 $presetName", color = C.TextPrimary) },
+        title = { Text(stringResource(R.string.ip_check_title, presetName), color = C.TextPrimary) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 if (results.isEmpty()) {
-                    Text("Checking...", color = C.TextSecondary, fontSize = 14.sp)
+                    Text(stringResource(R.string.checking), color = C.TextSecondary, fontSize = 14.sp)
                 } else {
                     results.forEach { r ->
                         val icon = if (r.isRegional) "\uD83C\uDFE0" else "\uD83C\uDF10"
@@ -384,7 +389,7 @@ fun IpCheckDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Close") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) }
         },
         containerColor = C.SurfaceVariant,
     )

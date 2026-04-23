@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.dave_cli.proxybox.R
 import com.dave_cli.proxybox.core.IpCheckService
 import com.dave_cli.proxybox.core.RoutingPreset
 import com.dave_cli.proxybox.core.RoutingPresets
@@ -134,9 +135,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     val code = conn.responseCode
                     val elapsed = System.currentTimeMillis() - start
                     conn.disconnect()
-                    if (code in 200..399) "OK — ${elapsed}ms" else "HTTP $code — ${elapsed}ms"
+                    val app = getApplication<Application>()
+                    if (code in 200..399) app.getString(R.string.test_ok, elapsed.toInt()) else app.getString(R.string.test_http_error, code, elapsed.toInt())
                 } catch (e: Exception) {
-                    "FAIL — ${e.message}"
+                    getApplication<Application>().getString(R.string.test_fail, e.message ?: "")
                 }
             }
             onResult(result)
@@ -149,7 +151,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val selected = profiles.value.firstOrNull { it.isSelected }
             if (selected == null) {
-                onResult(null, "No profile selected")
+                onResult(null, getApplication<Application>().getString(R.string.no_profile_selected))
                 return@launch
             }
             val result = withContext(Dispatchers.IO) {
@@ -174,6 +176,35 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun selectRoutingRule(id: String?) = viewModelScope.launch {
         repo.selectRoutingRule(id)
+    }
+
+    // ─── Split Tunneling ────────────────────────────────────────────────
+
+    private val _splitTunnelMode = MutableStateFlow(loadSplitTunnelMode())
+    val splitTunnelMode: StateFlow<SplitTunnelMode> = _splitTunnelMode.asStateFlow()
+
+    private val _splitTunnelPackages = MutableStateFlow(loadSplitTunnelPackages())
+    val splitTunnelPackages: StateFlow<Set<String>> = _splitTunnelPackages.asStateFlow()
+
+    fun setSplitTunnelMode(mode: SplitTunnelMode) {
+        prefs.edit().putString("split_tunnel_mode", mode.name).apply()
+        _splitTunnelMode.value = mode
+    }
+
+    fun toggleSplitTunnelApp(packageName: String) {
+        val current = _splitTunnelPackages.value.toMutableSet()
+        if (packageName in current) current.remove(packageName) else current.add(packageName)
+        prefs.edit().putStringSet("split_tunnel_packages", current).apply()
+        _splitTunnelPackages.value = current
+    }
+
+    private fun loadSplitTunnelMode(): SplitTunnelMode {
+        val name = prefs.getString("split_tunnel_mode", SplitTunnelMode.BYPASS.name)
+        return try { SplitTunnelMode.valueOf(name!!) } catch (_: Exception) { SplitTunnelMode.BYPASS }
+    }
+
+    private fun loadSplitTunnelPackages(): Set<String> {
+        return prefs.getStringSet("split_tunnel_packages", emptySet()) ?: emptySet()
     }
 
     // ─── Geo Update ────────────────────────────────────────────────────
@@ -328,3 +359,5 @@ data class IpCheckResult(
     val error: String?,
     val isRegional: Boolean
 )
+
+enum class SplitTunnelMode { BYPASS, ONLY }

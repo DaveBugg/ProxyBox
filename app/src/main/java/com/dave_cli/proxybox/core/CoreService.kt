@@ -240,7 +240,34 @@ class CoreService : VpnService() {
                 .addRoute("::", 0)
                 .addDnsServer("1.1.1.1")
                 .addDnsServer("8.8.8.8")
-                .addDisallowedApplication(packageName)
+
+            // Split tunneling
+            val prefs = getSharedPreferences("proxybox_prefs", Context.MODE_PRIVATE)
+            val packages = prefs.getStringSet("split_tunnel_packages", emptySet()) ?: emptySet()
+            val mode = prefs.getString("split_tunnel_mode", "BYPASS") ?: "BYPASS"
+
+            if (packages.isNotEmpty() && mode == "ONLY" && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                for (pkg in packages) {
+                    try {
+                        builder.addAllowedApplication(pkg)
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed to allow app: $pkg", e)
+                    }
+                }
+                Log.i(TAG, "Split tunnel ONLY mode: ${packages.size} apps")
+            } else {
+                builder.addDisallowedApplication(packageName)
+                if (packages.isNotEmpty() && mode == "BYPASS") {
+                    for (pkg in packages) {
+                        try {
+                            builder.addDisallowedApplication(pkg)
+                        } catch (e: Exception) {
+                            Log.w(TAG, "Failed to bypass app: $pkg", e)
+                        }
+                    }
+                    Log.i(TAG, "Split tunnel BYPASS mode: ${packages.size} apps excluded")
+                }
+            }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 builder.setMetered(false)
@@ -308,8 +335,8 @@ class CoreService : VpnService() {
         )
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_vpn_key)
-            .setContentTitle("ProxyBox")
-            .setContentText("Connecting\u2026")
+            .setContentTitle(getString(R.string.app_name))
+            .setContentText(getString(R.string.notif_connecting))
             .setContentIntent(contentPi)
             .setOngoing(true)
             .build()
@@ -332,10 +359,10 @@ class CoreService : VpnService() {
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_vpn_key)
-            .setContentTitle("ProxyBox — Connected")
+            .setContentTitle(getString(R.string.notif_connected))
             .setContentText("${profile.name} (${profile.protocol.uppercase()})")
             .setContentIntent(contentPi)
-            .addAction(R.drawable.ic_stop, "Disconnect", stopPi)
+            .addAction(R.drawable.ic_stop, getString(R.string.disconnect), stopPi)
             .setOngoing(true)
             .build()
     }
@@ -344,7 +371,7 @@ class CoreService : VpnService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "VPN Connection",
+                getString(R.string.notif_channel_name),
                 NotificationManager.IMPORTANCE_LOW
             )
             (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)

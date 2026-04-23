@@ -37,7 +37,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.sp
+import com.dave_cli.proxybox.R
 import com.dave_cli.proxybox.data.db.ProfileEntity
 import com.dave_cli.proxybox.ui.main.theme.C
 
@@ -72,7 +74,7 @@ fun ProfileList(
                     val text = profile.rawUri.ifBlank { profile.configJson }
                     val cb = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                     cb.setPrimaryClip(ClipData.newPlainText("config", text))
-                    Toast.makeText(context, "Config copied", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(R.string.config_copied), Toast.LENGTH_SHORT).show()
                 },
                 onShare = {
                     onMenuDismiss()
@@ -81,7 +83,7 @@ fun ProfileList(
                         Intent(Intent.ACTION_SEND).apply {
                             type = "text/plain"
                             putExtra(Intent.EXTRA_TEXT, text)
-                        }, "Share config"
+                        }, context.getString(R.string.share_config)
                     )
                     context.startActivity(intent)
                 },
@@ -192,20 +194,20 @@ private fun ProfileCard(
                 onDismissRequest = onMenuDismiss,
             ) {
                 DropdownMenuItem(
-                    text = { Text("\u270F\uFE0F  Rename", color = C.TextPrimary) },
+                    text = { Text("\u270F\uFE0F  ${stringResource(R.string.rename)}", color = C.TextPrimary) },
                     onClick = { onMenuDismiss(); onRename() },
                 )
                 DropdownMenuItem(
-                    text = { Text("\uD83D\uDCCB  Copy config", color = C.TextPrimary) },
+                    text = { Text("\uD83D\uDCCB  ${stringResource(R.string.copy_config)}", color = C.TextPrimary) },
                     onClick = onCopyConfig,
                 )
                 DropdownMenuItem(
-                    text = { Text("\uD83D\uDCE4  Share", color = C.TextPrimary) },
+                    text = { Text("\uD83D\uDCE4  ${stringResource(R.string.share)}", color = C.TextPrimary) },
                     onClick = onShare,
                 )
                 Divider(color = C.Border)
                 DropdownMenuItem(
-                    text = { Text("\uD83D\uDDD1  Delete", color = C.Red) },
+                    text = { Text("\uD83D\uDDD1  ${stringResource(R.string.delete)}", color = C.Red) },
                     onClick = { onMenuDismiss(); onDelete() },
                 )
             }

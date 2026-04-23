@@ -38,7 +38,9 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.sp
+import com.dave_cli.proxybox.R
 import com.dave_cli.proxybox.core.CoreService
 import com.dave_cli.proxybox.core.CoreService.VpnState
 import com.dave_cli.proxybox.ui.main.theme.C
@@ -120,7 +122,7 @@ fun ConnectSection(
                 // Left: status + profile + duration
                 Column {
                     Text(
-                        "Connected",
+                        stringResource(R.string.connected),
                         color = C.Green,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Medium
@@ -140,9 +142,9 @@ fun ConnectSection(
             // Centered status when not connected
             Text(
                 text = when (vpnState) {
-                    VpnState.CONNECTING -> "Connecting..."
-                    VpnState.ERROR -> "Connection failed"
-                    else -> "Not connected"
+                    VpnState.CONNECTING -> stringResource(R.string.connecting)
+                    VpnState.ERROR -> stringResource(R.string.connection_failed)
+                    else -> stringResource(R.string.not_connected)
                 },
                 color = when (vpnState) {
                     VpnState.ERROR -> C.Red
@@ -153,7 +155,7 @@ fun ConnectSection(
             )
             if (!isConnecting && vpnState != VpnState.ERROR) {
                 Text(
-                    "Tap to connect", color = Color(0xFF444444), fontSize = 12.sp,
+                    stringResource(R.string.tap_to_connect), color = Color(0xFF444444), fontSize = 12.sp,
                     modifier = Modifier.padding(top = 4.dp)
                 )
             }
@@ -213,7 +215,7 @@ private fun ConnectionDuration() {
             String.format("%02d:%02d:%02d", elapsed / 3600, (elapsed % 3600) / 60, elapsed % 60),
             color = C.TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.SemiBold
         )
-        Text("duration", color = Color(0xFF555555), fontSize = 11.sp,
+        Text(stringResource(R.string.duration), color = Color(0xFF555555), fontSize = 11.sp,
             modifier = Modifier.padding(top = 1.dp))
     }
 }
@@ -233,7 +235,7 @@ private fun SpeedTestChip(
 
     if (isTesting) {
         Box(modifier = chipModifier.padding(horizontal = 14.dp, vertical = 8.dp)) {
-            Text("Testing...", color = C.TextSecondary, fontSize = 13.sp)
+            Text(stringResource(R.string.testing), color = C.TextSecondary, fontSize = 13.sp)
         }
     } else if (speedMbps != null) {
         Row(
@@ -250,7 +252,7 @@ private fun SpeedTestChip(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                "\u2193 %.1f Mbps".format(speedMbps),
+                stringResource(R.string.speed_result_mbps, speedMbps!!),
                 color = C.Green,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium
@@ -272,7 +274,7 @@ private fun SpeedTestChip(
                 }
                 .padding(horizontal = 14.dp, vertical = 8.dp)
         ) {
-            Text("Failed \u21BB", color = C.Red, fontSize = 13.sp)
+            Text("${stringResource(R.string.speed_failed)} \u21BB", color = C.Red, fontSize = 13.sp)
         }
     } else {
         Box(
@@ -287,7 +289,7 @@ private fun SpeedTestChip(
                 }
                 .padding(horizontal = 14.dp, vertical = 8.dp)
         ) {
-            Text("\u26A1 Speed Test", color = C.Amber, fontSize = 13.sp,
+            Text("\u26A1 ${stringResource(R.string.speed_test)}", color = C.Amber, fontSize = 13.sp,
                 fontWeight = FontWeight.Medium)
         }
     }
