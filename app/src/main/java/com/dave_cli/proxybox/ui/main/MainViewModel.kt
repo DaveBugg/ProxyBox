@@ -105,14 +105,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun addSubscription(name: String, url: String, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
-            val ok = repo.addSubscription(name, url)
+            val ok = repo.addSubscription(name, url, _subUserAgent.value)
             onResult(ok)
         }
     }
 
     fun refreshSubscription(subId: String, url: String, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
-            val ok = repo.refreshSubscription(subId, url)
+            val ok = repo.refreshSubscription(subId, url, _subUserAgent.value)
             onResult(ok)
         }
     }
@@ -207,6 +207,30 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         return prefs.getStringSet("split_tunnel_packages", emptySet()) ?: emptySet()
     }
 
+    // ─── Subscription User-Agent ────────────────────────────────────────
+
+    private val _subUserAgent = MutableStateFlow(prefs.getString("sub_user_agent", "") ?: "")
+    val subUserAgent: StateFlow<String> = _subUserAgent.asStateFlow()
+
+    fun setSubUserAgent(ua: String) {
+        prefs.edit().putString("sub_user_agent", ua).apply()
+        _subUserAgent.value = ua
+    }
+
+    // ─── Geo Profile ───────────────────────────────────────────────────
+
+    private val _geoProfile = MutableStateFlow(com.dave_cli.proxybox.core.GeoProfile.getSaved(getApplication()))
+    val geoProfile: StateFlow<com.dave_cli.proxybox.core.GeoProfile> = _geoProfile.asStateFlow()
+
+    fun setGeoProfile(profile: com.dave_cli.proxybox.core.GeoProfile) {
+        com.dave_cli.proxybox.core.GeoProfile.save(getApplication(), profile)
+        com.dave_cli.proxybox.core.GeoFileManager.clearEtags(getApplication())
+        _geoProfile.value = profile
+        // Refresh active preset with new geo profile categories
+        val presetId = prefs.getString("active_preset", "global") ?: "global"
+        _activePreset.value = RoutingPresets.findById(presetId, profile.id)
+    }
+
     // ─── Geo Update ────────────────────────────────────────────────────
 
     private val _isUpdatingGeo = MutableStateFlow(false)
@@ -256,12 +280,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun loadActivePreset(): RoutingPreset {
         val id = prefs.getString("active_preset", "global") ?: "global"
-        return RoutingPresets.findById(id)
+        val geoProfileId = prefs.getString("geo_profile", null)
+        return RoutingPresets.findById(id, geoProfileId)
     }
 
     fun setActivePreset(preset: RoutingPreset) {
         prefs.edit().putString("active_preset", preset.id).apply()
-        _activePreset.value = preset
+        val geoProfileId = prefs.getString("geo_profile", null)
+        _activePreset.value = RoutingPresets.findById(preset.id, geoProfileId)
     }
 
     // ─── IP Check ────────────────────────────────────────────────────────

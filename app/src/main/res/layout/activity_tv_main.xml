@@ -205,6 +205,18 @@
                     android:nextFocusLeft="@id/lvProfiles"/>
 
                 <Button
+                    android:id="@+id/btnGeoProfile"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/geo_profile"
+                    android:textSize="13sp"
+                    android:background="@drawable/tv_btn_focus"
+                    android:textColor="#A78BFA"
+                    android:focusable="true"
+                    android:nextFocusLeft="@id/lvProfiles"/>
+
+                <Button
                     android:id="@+id/btnUpdateGeo"
                     android:layout_width="match_parent"
                     android:layout_height="50dp"

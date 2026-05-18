@@ -120,23 +120,27 @@ class ProfileRepository(db: AppDatabase) {
         return "" to 443
     }
 
-    suspend fun addSubscription(name: String, url: String): Boolean = withContext(Dispatchers.IO) {
+    suspend fun addSubscription(name: String, url: String, userAgent: String = ""): Boolean = withContext(Dispatchers.IO) {
         val sub = SubscriptionEntity(
             id = UUID.randomUUID().toString(),
             name = name,
             url = url
         )
         subscriptionDao.insertOrReplace(sub)
-        refreshSubscription(sub.id, url)
+        refreshSubscription(sub.id, url, userAgent)
     }
 
-    suspend fun refreshSubscription(subId: String, url: String): Boolean = withContext(Dispatchers.IO) {
+    suspend fun refreshSubscription(subId: String, url: String, userAgent: String = ""): Boolean = withContext(Dispatchers.IO) {
         try {
             val client = OkHttpClient.Builder()
                 .connectTimeout(15, TimeUnit.SECONDS)
                 .readTimeout(15, TimeUnit.SECONDS)
                 .build()
-            val request = Request.Builder().url(url).build()
+            val reqBuilder = Request.Builder().url(url)
+            if (userAgent.isNotBlank()) {
+                reqBuilder.header("User-Agent", userAgent)
+            }
+            val request = reqBuilder.build()
             val content = client.newCall(request).execute().body?.string() ?: return@withContext false
 
             val profiles = SubscriptionParser.parse(content, subId)

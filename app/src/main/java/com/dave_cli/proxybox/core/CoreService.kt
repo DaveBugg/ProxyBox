@@ -172,7 +172,8 @@ class CoreService : VpnService() {
 
                 val prefsBox = getSharedPreferences("proxybox_prefs", Context.MODE_PRIVATE)
                 val presetId = prefsBox.getString("active_preset", "global") ?: "global"
-                val preset = RoutingPresets.findById(presetId)
+                val geoProfileId = prefsBox.getString("geo_profile", null)
+                val preset = RoutingPresets.findById(presetId, geoProfileId)
                 Log.i(TAG, "Using routing preset: ${preset.displayName}")
 
                 generateSocksCreds()
@@ -246,7 +247,7 @@ class CoreService : VpnService() {
             val packages = prefs.getStringSet("split_tunnel_packages", emptySet()) ?: emptySet()
             val mode = prefs.getString("split_tunnel_mode", "BYPASS") ?: "BYPASS"
 
-            if (packages.isNotEmpty() && mode == "ONLY" && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (packages.isNotEmpty() && mode == "ONLY" && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 for (pkg in packages) {
                     try {
                         builder.addAllowedApplication(pkg)

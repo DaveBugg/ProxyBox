@@ -5,10 +5,13 @@ import android.content.SharedPreferences
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.Credentials
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
 import java.io.FileOutputStream
+import java.net.InetSocketAddress
+import java.net.Proxy
 import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
 
@@ -19,20 +22,30 @@ object GeoFileManager {
     private const val TAG = "GeoFileManager"
     private const val PREFS_NAME = "geo_update_prefs"
 
-    private const val GEOIP_URL =
-        "https://github.com/v2fly/geoip/releases/latest/download/geoip.dat"
-    private const val GEOIP_SHA256_URL = "$GEOIP_URL.sha256sum"
+    private fun buildClient(): OkHttpClient {
+        val builder = OkHttpClient.Builder()
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .followRedirects(true)
+            .followSslRedirects(true)
 
-    private const val GEOSITE_URL =
-        "https://github.com/v2fly/domain-list-community/releases/latest/download/dlc.dat"
-    private const val GEOSITE_SHA256_URL = "$GEOSITE_URL.sha256sum"
+        if (CoreService.isActive) {
+            val proxy = Proxy(Proxy.Type.SOCKS, InetSocketAddress("127.0.0.1", CoreService.SOCKS_PORT))
+            builder.proxy(proxy)
 
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(60, TimeUnit.SECONDS)
-        .followRedirects(true)
-        .followSslRedirects(true)
-        .build()
+            val user = CoreService.socksUser
+            val pass = CoreService.socksPass
+            if (user != null && pass != null) {
+                builder.proxyAuthenticator { _, response ->
+                    response.request.newBuilder()
+                        .header("Proxy-Authorization", Credentials.basic(user, pass))
+                        .build()
+                }
+            }
+        }
+
+        return builder.build()
+    }
 
     suspend fun updateAll(
         context: Context,
@@ -40,12 +53,19 @@ object GeoFileManager {
     ): Boolean = withContext(Dispatchers.IO) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val assetsDir = context.getDir("assets", Context.MODE_PRIVATE)
+        val geoProfile = GeoProfile.getSaved(context)
+        val client = buildClient()
+
+        Log.i(TAG, "Updating geo files using profile: ${geoProfile.id}" +
+                if (CoreService.isActive) " (via VPN proxy)" else " (direct)")
 
         val geoipUpdated = downloadIfNew(
-            assetsDir, GEOIP_URL, GEOIP_SHA256_URL, "geoip.dat", prefs, onProgress
+            client, assetsDir, geoProfile.geoipUrl, geoProfile.geoipSha256Url,
+            "geoip.dat", prefs, onProgress
         )
         val geositeUpdated = downloadIfNew(
-            assetsDir, GEOSITE_URL, GEOSITE_SHA256_URL, "geosite.dat", prefs, onProgress
+            client, assetsDir, geoProfile.geositeUrl, geoProfile.geositeSha256Url,
+            "geosite.dat", prefs, onProgress
         )
 
         if (geoipUpdated || geositeUpdated) {
@@ -61,7 +81,15 @@ object GeoFileManager {
             .getLong("last_update_time", 0L)
     }
 
+    fun clearEtags(context: Context) {
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
+            .remove("etag_geoip.dat")
+            .remove("etag_geosite.dat")
+            .apply()
+    }
+
     private fun downloadIfNew(
+        client: OkHttpClient,
         destDir: File,
         url: String,
         sha256Url: String,
@@ -118,7 +146,7 @@ object GeoFileManager {
 
             onProgress?.invoke(targetFileName, -1, -1) // signal: verifying
 
-            val expectedHash = fetchSha256Hash(sha256Url)
+            val expectedHash = fetchSha256Hash(client, sha256Url)
             if (expectedHash != null && !verifySha256(tmpFile, expectedHash)) {
                 Log.w(TAG, "$targetFileName: SHA256 verification failed")
                 tmpFile.delete()
@@ -149,7 +177,7 @@ object GeoFileManager {
         }
     }
 
-    private fun fetchSha256Hash(url: String): String? {
+    private fun fetchSha256Hash(client: OkHttpClient, url: String): String? {
         return try {
             val request = Request.Builder().url(url).build()
             val response = client.newCall(request).execute()

@@ -26,6 +26,7 @@ import androidx.lifecycle.lifecycleScope
 import android.content.Context
 import com.dave_cli.proxybox.R
 import com.dave_cli.proxybox.core.CoreService
+import com.dave_cli.proxybox.core.GeoProfile
 import com.dave_cli.proxybox.core.LocaleHelper
 import com.dave_cli.proxybox.core.CoreService.VpnState
 import com.dave_cli.proxybox.core.RoutingPresets
@@ -113,6 +114,7 @@ class TvMainActivity : FragmentActivity() {
         }
 
         setupPresetSpinner()
+        setupGeoProfile()
         setupIpCheck()
 
         binding.btnSpeedTest.setOnClickListener {
@@ -221,6 +223,52 @@ class TvMainActivity : FragmentActivity() {
             }
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
+    }
+
+    private fun setupGeoProfile() {
+        updateGeoProfileButton()
+        binding.btnGeoProfile.setOnClickListener {
+            showGeoProfileDialog()
+        }
+    }
+
+    private fun updateGeoProfileButton() {
+        val profile = viewModel.geoProfile.value
+        val name = geoProfileName(profile)
+        binding.btnGeoProfile.text = "${getString(R.string.geo_profile)}: $name"
+    }
+
+    private fun geoProfileName(profile: GeoProfile): String = when (profile.id) {
+        "loyalsoldier" -> "Loyalsoldier"
+        "v2fly" -> "v2fly upstream"
+        "runetfreedom" -> "runetfreedom (RU)"
+        else -> profile.id
+    }
+
+    private fun showGeoProfileDialog() {
+        val profiles = GeoProfile.ALL
+        val current = viewModel.geoProfile.value
+        val names = profiles.map {
+            val check = if (it.id == current.id) "✓ " else "   "
+            "$check${geoProfileName(it)}"
+        }.toTypedArray()
+
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.geo_profile))
+            .setItems(names) { _, which ->
+                val selected = profiles[which]
+                if (selected.id != current.id) {
+                    viewModel.setGeoProfile(selected)
+                    updateGeoProfileButton()
+                    Toast.makeText(
+                        this,
+                        getString(R.string.geo_profile_switched, geoProfileName(selected)),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+            .setNegativeButton(getString(R.string.close), null)
+            .show()
     }
 
     private fun setupIpCheck() {

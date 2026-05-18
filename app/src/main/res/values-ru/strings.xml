@@ -91,6 +91,12 @@
     <string name="update_app_subtitle">v%s — нажмите для проверки</string>
     <string name="update_found_no_apk">Найдено обновление %s, но APK не прикреплён</string>
     <string name="on_latest_version">У вас последняя версия (%s)</string>
+    <string name="geo_profile">Гео-профиль</string>
+    <string name="geo_profile_hint">Переключение профиля обновляет URL загрузки. Нажмите «Обновить Geo базы» ниже для загрузки нового набора. Пресеты маршрутизации автоматически адаптируются к категориям активного профиля.</string>
+    <string name="geo_profile_switched">Переключено на %s — нажмите «Обновить Geo базы»</string>
+    <string name="geo_desc_loyalsoldier">Список для CN с хорошей базой для RU. Добавляет geosite:gfw, geoip:telegram и другие ярлыки. Хорошая основа для маршрутизации RU и CN трафика. ~10 МБ</string>
+    <string name="geo_desc_v2fly">Чистый upstream от разработчиков v2fly. Самый маленький (~2 МБ geosite). Те же category-ru, tld-ru, cn, category-ads-all, но без дополнительных списков.</string>
+    <string name="geo_desc_runetfreedom">Список для России с обширным покрытием и ежедневными обновлениями. Включает списки заблокированных сайтов (ru-blocked, ru-blocked-all) и категории российских операторов (mts-ru, t2-ru, tbank-ru). Больший размер (~67 МБ geosite, 6× Loyalsoldier).</string>
     <string name="update_geo">Обновить Geo базы</string>
     <string name="update_geo_subtitle">geoip.dat · geosite.dat</string>
     <string name="group_about">О ПРИЛОЖЕНИИ</string>
@@ -101,6 +107,10 @@
     <string name="xray_subtitle">На базе XTLS/Xray-core</string>
     <string name="license">Лицензия</string>
     <string name="license_value">GPLv3</string>
+    <string name="sub_user_agent">User-Agent подписки</string>
+    <string name="sub_ua_default">По умолчанию (OkHttp)</string>
+    <string name="sub_ua_hint">Заголовок User-Agent при загрузке подписок. Некоторые провайдеры требуют определённое имя приложения.</string>
+    <string name="sub_ua_custom">Свой вариант:</string>
     <string name="update_available">Доступно обновление</string>
     <string name="new_version">Новая версия: v%s</string>
     <string name="download_install">Скачать и установить</string>
@@ -110,7 +120,8 @@
     <string name="bypass_selected">Исключить выбранные</string>
     <string name="only_selected">Только выбранные</string>
     <string name="bypass_description">Выбранные приложения будут обходить VPN</string>
-    <string name="only_description">Только выбранные приложения будут использовать VPN (Android 10+)</string>
+    <string name="only_description">Только выбранные приложения будут использовать VPN (Android 11+)</string>
+    <string name="only_description_unsupported">«Только выбранные» требует Android 11 или выше</string>
     <string name="search_apps">Поиск приложений…</string>
     <string name="hide_system_apps">Скрыть системные</string>
     <string name="loading_apps">Загрузка приложений…</string>

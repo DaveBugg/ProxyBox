@@ -29,8 +29,8 @@ android {
         applicationId "com.dave_cli.proxybox"
         minSdk 24
         targetSdk 35
-        versionCode 16
-        versionName "1.3.0"
+        versionCode 18
+        versionName "1.3.2"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -40,6 +40,11 @@ android {
     }
 
     buildTypes {
+        debug {
+            if (keystorePropertiesFile.exists()) {
+                signingConfig signingConfigs.release
+            }
+        }
         release {
             minifyEnabled true
             shrinkResources true

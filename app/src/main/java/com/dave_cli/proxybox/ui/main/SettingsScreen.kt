@@ -38,9 +38,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.ui.unit.sp
 import com.dave_cli.proxybox.BuildConfig
 import com.dave_cli.proxybox.R
+import com.dave_cli.proxybox.core.GeoProfile
 import com.dave_cli.proxybox.core.LocaleHelper
 import com.dave_cli.proxybox.core.UpdateResult
 import com.dave_cli.proxybox.ui.main.theme.C
@@ -56,8 +59,12 @@ fun SettingsScreen(
     val isUpdatingGeo by viewModel.isUpdatingGeo.collectAsState()
     val geoProgress by viewModel.geoProgress.collectAsState()
     val isCheckingUpdate by viewModel.isCheckingUpdate.collectAsState()
+    val currentGeoProfile by viewModel.geoProfile.collectAsState()
+    val subUserAgent by viewModel.subUserAgent.collectAsState()
 
     var updateResult by remember { mutableStateOf<UpdateResult?>(null) }
+    var showGeoProfileDialog by remember { mutableStateOf(false) }
+    var showUaDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -95,6 +102,14 @@ fun SettingsScreen(
             title = stringResource(R.string.split_tunneling),
             subtitle = stringResource(R.string.split_tunneling_subtitle),
             onClick = onOpenSplitTunnel,
+        )
+
+        SettingsItem(
+            icon = "\uD83C\uDD94",
+            iconColor = C.Blue,
+            title = stringResource(R.string.sub_user_agent),
+            subtitle = if (subUserAgent.isBlank()) stringResource(R.string.sub_ua_default) else subUserAgent,
+            onClick = { showUaDialog = true },
         )
 
         // LANGUAGE
@@ -139,6 +154,14 @@ fun SettingsScreen(
         )
 
         SettingsItem(
+            icon = "\uD83D\uDDFA",
+            iconColor = C.Violet,
+            title = stringResource(R.string.geo_profile),
+            subtitle = geoProfileDisplayName(currentGeoProfile),
+            onClick = { showGeoProfileDialog = true }
+        )
+
+        SettingsItem(
             icon = "\uD83C\uDF0D",
             iconColor = C.Blue,
             title = stringResource(R.string.update_geo),
@@ -169,9 +192,13 @@ fun SettingsScreen(
             subtitle = stringResource(R.string.github_url),
             subtitleColor = C.Primary,
             onClick = {
-                context.startActivity(
-                    Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/DaveBugg/ProxyBox"))
-                )
+                try {
+                    context.startActivity(
+                        Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/DaveBugg/ProxyBox"))
+                    )
+                } catch (_: Exception) {
+                    Toast.makeText(context, "github.com/DaveBugg/ProxyBox", Toast.LENGTH_LONG).show()
+                }
             }
         )
 
@@ -189,6 +216,35 @@ fun SettingsScreen(
             title = stringResource(R.string.license),
             subtitle = stringResource(R.string.license_value),
             showArrow = false,
+        )
+    }
+
+    // Geo profile dialog
+    if (showGeoProfileDialog) {
+        GeoProfileDialog(
+            currentProfile = currentGeoProfile,
+            onSelect = { profile ->
+                viewModel.setGeoProfile(profile)
+                showGeoProfileDialog = false
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.geo_profile_switched, geoProfileDisplayName(profile)),
+                    Toast.LENGTH_SHORT
+                ).show()
+            },
+            onDismiss = { showGeoProfileDialog = false }
+        )
+    }
+
+    // User-Agent dialog
+    if (showUaDialog) {
+        UserAgentDialog(
+            currentUa = subUserAgent,
+            onSelect = { ua ->
+                viewModel.setSubUserAgent(ua)
+                showUaDialog = false
+            },
+            onDismiss = { showUaDialog = false }
         )
     }
 
@@ -269,4 +325,177 @@ private fun SettingsItem(
             Text("\u203A", color = Color(0xFF444444), fontSize = 20.sp)
         }
     }
+}
+
+private fun geoProfileDisplayName(profile: GeoProfile): String = when (profile.id) {
+    "loyalsoldier" -> "Loyalsoldier"
+    "v2fly" -> "v2fly upstream"
+    "runetfreedom" -> "runetfreedom (RU-focused)"
+    else -> profile.id
+}
+
+@Composable
+private fun GeoProfileDialog(
+    currentProfile: GeoProfile,
+    onSelect: (GeoProfile) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.geo_profile), color = C.TextPrimary) },
+        text = {
+            Column {
+                Text(
+                    stringResource(R.string.geo_profile_hint),
+                    color = C.TextDim,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(bottom = 12.dp),
+                )
+                GeoProfile.ALL.forEach { profile ->
+                    val isActive = profile.id == currentProfile.id
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(if (isActive) C.Primary.copy(alpha = 0.15f) else Color.Transparent)
+                            .clickable { onSelect(profile) }
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                geoProfileDisplayName(profile),
+                                color = if (isActive) C.Primary else C.TextPrimary,
+                                fontSize = 14.sp,
+                                fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Normal,
+                            )
+                            Text(
+                                geoProfileDescription(profile),
+                                color = C.TextDim,
+                                fontSize = 11.sp,
+                                modifier = Modifier.padding(top = 2.dp),
+                            )
+                        }
+                        if (isActive) {
+                            Text("✓", color = C.Primary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.close), color = C.TextSecondary)
+            }
+        },
+        containerColor = C.SurfaceVariant,
+    )
+}
+
+@Composable
+private fun geoProfileDescription(profile: GeoProfile): String = when (profile.id) {
+    "loyalsoldier" -> stringResource(R.string.geo_desc_loyalsoldier)
+    "v2fly" -> stringResource(R.string.geo_desc_v2fly)
+    "runetfreedom" -> stringResource(R.string.geo_desc_runetfreedom)
+    else -> ""
+}
+
+private val UA_PRESETS = listOf(
+    "" to "Default (none)",
+    "Happ/3.20.4/Android" to "Happ Android",
+    "v2rayNG/1.8.29" to "v2rayNG",
+    "ClashForAndroid/2.5.12" to "Clash for Android",
+)
+
+@Composable
+private fun UserAgentDialog(
+    currentUa: String,
+    onSelect: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var customUa by remember { mutableStateOf(currentUa) }
+    var isCustom by remember {
+        mutableStateOf(UA_PRESETS.none { it.first == currentUa })
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.sub_user_agent), color = C.TextPrimary) },
+        text = {
+            Column {
+                Text(
+                    stringResource(R.string.sub_ua_hint),
+                    color = C.TextDim,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(bottom = 12.dp),
+                )
+                UA_PRESETS.forEach { (ua, label) ->
+                    val isActive = !isCustom && ua == currentUa
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (isActive) C.Primary.copy(alpha = 0.15f) else Color.Transparent)
+                            .clickable {
+                                isCustom = false
+                                onSelect(ua)
+                            }
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                label,
+                                color = if (isActive) C.Primary else C.TextPrimary,
+                                fontSize = 14.sp,
+                                fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Normal,
+                            )
+                            if (ua.isNotBlank()) {
+                                Text(ua, color = C.TextDim, fontSize = 11.sp)
+                            }
+                        }
+                        if (isActive) {
+                            Text("\u2713", color = C.Primary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    stringResource(R.string.sub_ua_custom),
+                    color = C.TextSecondary,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(bottom = 4.dp),
+                )
+                OutlinedTextField(
+                    value = customUa,
+                    onValueChange = { customUa = it; isCustom = true },
+                    singleLine = true,
+                    placeholder = { Text("MyApp/1.0", color = C.TextDim, fontSize = 13.sp) },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = C.TextPrimary,
+                        unfocusedTextColor = C.TextPrimary,
+                        focusedBorderColor = C.Primary,
+                        unfocusedBorderColor = C.TextDim.copy(alpha = 0.3f),
+                        cursorColor = C.Primary,
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            if (isCustom) {
+                TextButton(onClick = { onSelect(customUa.trim()) }) {
+                    Text(stringResource(R.string.save), color = C.Primary)
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel), color = C.TextSecondary)
+            }
+        },
+        containerColor = C.SurfaceVariant,
+    )
 }

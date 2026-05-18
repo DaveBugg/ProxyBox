@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
+import android.os.Build
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -155,9 +156,11 @@ fun SplitTunnelScreen(
                 modifier = Modifier.weight(1f),
             )
             Spacer(Modifier.width(8.dp))
+            val onlySupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
             ModeChip(
                 label = stringResource(R.string.only_selected),
                 selected = splitMode == SplitTunnelMode.ONLY,
+                enabled = onlySupported,
                 onClick = {
                     viewModel.setSplitTunnelMode(SplitTunnelMode.ONLY)
                     if (CoreService.isActive) onReconnect()
@@ -167,10 +170,12 @@ fun SplitTunnelScreen(
         }
 
         // Mode description
+        val onlySupportedDesc = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
         Text(
-            text = when (splitMode) {
-                SplitTunnelMode.BYPASS -> stringResource(R.string.bypass_description)
-                SplitTunnelMode.ONLY -> stringResource(R.string.only_description)
+            text = when {
+                splitMode == SplitTunnelMode.BYPASS -> stringResource(R.string.bypass_description)
+                !onlySupportedDesc -> stringResource(R.string.only_description_unsupported)
+                else -> stringResource(R.string.only_description)
             },
             color = C.TextDim,
             fontSize = 12.sp,
@@ -248,20 +253,31 @@ private fun ModeChip(
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
+    val bg = when {
+        !enabled -> C.Surface.copy(alpha = 0.4f)
+        selected -> C.Primary
+        else -> C.Surface
+    }
+    val textColor = when {
+        !enabled -> C.TextDim
+        selected -> Color.White
+        else -> C.TextSecondary
+    }
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(12.dp))
-            .background(if (selected) C.Primary else C.Surface)
-            .clickable(onClick = onClick)
+            .background(bg)
+            .then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(vertical = 10.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             label,
-            color = if (selected) Color.White else C.TextSecondary,
+            color = textColor,
             fontSize = 13.sp,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            fontWeight = if (selected && enabled) FontWeight.SemiBold else FontWeight.Normal,
         )
     }
 }

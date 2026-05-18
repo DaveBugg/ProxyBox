@@ -91,6 +91,12 @@
     <string name="update_app_subtitle">v%s — tap to check</string>
     <string name="update_found_no_apk">Update %s found but no APK attached</string>
     <string name="on_latest_version">You\'re on the latest version (%s)</string>
+    <string name="geo_profile">Geo Profile</string>
+    <string name="geo_profile_hint">Switching profile updates the download URLs. Use \"Update Geo\" below to download the new dataset. Routing presets automatically adapt to the active profile\'s categories.</string>
+    <string name="geo_profile_switched">Switched to %s — tap Update Geo to download</string>
+    <string name="geo_desc_loyalsoldier">CN-focused list with a decent RU base. Adds geosite:gfw, geoip:telegram, and other shortcuts. Good baseline for routing both RU and CN traffic. ~10 MB</string>
+    <string name="geo_desc_v2fly">Pure upstream from the v2fly maintainers. Smallest download (~2 MB geosite). Same category-ru, tld-ru, cn, category-ads-all names work, but without the curated extras.</string>
+    <string name="geo_desc_runetfreedom">Russia-focused list with extensive RU coverage and daily updates. Includes blocked-in-RU site lists (ru-blocked, ru-blocked-all) and Russian telecom categories (mts-ru, t2-ru, tbank-ru). Larger download (~67 MB geosite, 6× Loyalsoldier).</string>
     <string name="update_geo">Update Geo Databases</string>
     <string name="update_geo_subtitle">geoip.dat · geosite.dat</string>
     <string name="group_about">ABOUT</string>
@@ -101,6 +107,10 @@
     <string name="xray_subtitle">Powered by XTLS/Xray-core</string>
     <string name="license">License</string>
     <string name="license_value">GPLv3</string>
+    <string name="sub_user_agent">Subscription User-Agent</string>
+    <string name="sub_ua_default">Default (OkHttp)</string>
+    <string name="sub_ua_hint">User-Agent header sent when fetching subscription URLs. Some providers require a specific app identity.</string>
+    <string name="sub_ua_custom">Custom:</string>
     <string name="update_available">Update Available</string>
     <string name="new_version">New version: v%s</string>
     <string name="download_install">Download &amp; Install</string>
@@ -110,7 +120,8 @@
     <string name="bypass_selected">Bypass selected</string>
     <string name="only_selected">Only selected</string>
     <string name="bypass_description">Selected apps will bypass the VPN</string>
-    <string name="only_description">Only selected apps will use the VPN (Android 10+)</string>
+    <string name="only_description">Only selected apps will use the VPN (Android 11+)</string>
+    <string name="only_description_unsupported">\"Only selected\" requires Android 11 or higher</string>
     <string name="search_apps">Search apps…</string>
     <string name="hide_system_apps">Hide system apps</string>
     <string name="loading_apps">Loading apps…</string>
