@@ -27,6 +27,14 @@ local.properties
 # AI tool configs
 /.claude/
 /.serena/
+/.cbmignore
+/.codebase-memory/
+/CLAUDE.md
+/memory/
+
+# Library backups
+*.bak
+*.bak-*
 
 # OS
 .DS_Store
