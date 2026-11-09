@@ -25,9 +25,11 @@ object SpeedTestEngine {
     private const val MAX_MS = WARMUP_MS + MEASURE_MS
 
     private val TEST_URLS = listOf(
-        "http://speed.cloudflare.com/__down?bytes=200000000",   // 200MB
-        "http://proof.ovh.net/files/100Mb.dat",                 // 100MB
-        "http://speedtest.tele2.net/100MB.zip",                 // 100MB
+        // https: HttpURLConnection does not follow http->https redirects (OVH/tele2 do that).
+        // Cloudflare answers 403 for bytes >= ~100MB, so stay below that.
+        "https://speed.cloudflare.com/__down?bytes=90000000",   // 90MB
+        "https://proof.ovh.net/files/100Mb.dat",                // 100MB
+        "https://speedtest.tele2.net/100MB.zip",                // 100MB
     )
 
     data class Result(val downloadMbps: Double?, val error: String?)
@@ -40,8 +42,9 @@ object SpeedTestEngine {
      * Must be called from a background thread (Dispatchers.IO).
      */
     @Synchronized
-    fun run(profile: ProfileEntity): Result {
+    fun run(rawProfile: ProfileEntity): Result {
         var controller: CoreController? = null
+        val profile = OutboundNormalizer.prepare(rawProfile)
 
         try {
             // 1. Build minimal config: SOCKS inbound on TEST_PORT (no auth), profile outbounds, global routing

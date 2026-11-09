@@ -123,14 +123,6 @@ object XrayManager : ProxyEngine {
         }
     }
 
-    fun queryStats(tag: String, link: String): Long {
-        return try {
-            coreController?.queryStats(tag, link) ?: 0
-        } catch (e: Exception) {
-            0
-        }
-    }
-
     private fun extractGeoFiles(ctx: Context) {
         val assetsDir = ctx.getDir("assets", Context.MODE_PRIVATE)
         listOf("geoip.dat", "geosite.dat").forEach { name ->

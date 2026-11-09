@@ -50,14 +50,18 @@ object ConfigParser {
         val wsHost     = u.getQueryParameter("host") ?: sni
         val serviceName = u.getQueryParameter("serviceName") ?: ""
         val alpn       = u.getQueryParameter("alpn") ?: ""
+        val insecure   = (u.getQueryParameter("allowInsecure") ?: u.getQueryParameter("insecure") ?: "0") == "1"
 
         val streamSettings = buildStreamSettings(
-            network, security, sni, pbk, sid, fp, headerType, path, wsHost, serviceName, alpn
+            network, security, sni, pbk, sid, fp, headerType, path, wsHost, serviceName, alpn,
+            allowInsecure = insecure,
+            xhttpMode = u.getQueryParameter("mode") ?: "",
+            xhttpExtra = u.getQueryParameter("extra") ?: ""
         )
 
         val userObj = JsonObject().apply {
             addProperty("id", uuid)
-            addProperty("encryption", "none")
+            addProperty("encryption", u.getQueryParameter("encryption") ?: "none")
             if (flow.isNotEmpty()) addProperty("flow", flow)
         }
 
@@ -249,35 +253,77 @@ object ConfigParser {
     // ─── HYSTERIA2 ────────────────────────────────────────────────────────────
 
     private fun parseHysteria2(uri: String): ProfileEntity {
-        val normalized = uri.replace("hysteria2://", "hy2://")
-        val u = Uri.parse(normalized)
-        val auth = u.userInfo ?: ""
-        val host = u.host ?: ""
-        val port = u.port.takeIf { it > 0 } ?: 443
-        val sni  = u.getQueryParameter("sni") ?: host
-        val name = Uri.decode(u.fragment ?: host)
-        val insecure = u.getQueryParameter("insecure") == "1"
-        val obfs = u.getQueryParameter("obfs") ?: ""
-        val obfsPassword = u.getQueryParameter("obfs-password") ?: ""
+        // Parsed by hand: hy2 links may carry multi-port specs ("host:443,5000-6000")
+        // that android.net.Uri cannot handle.
+        val withoutScheme = uri.substringAfter("://")
+        val fragment = withoutScheme.substringAfter('#', "")
+        val noFragment = withoutScheme.substringBefore('#')
+        val query = noFragment.substringAfter('?', "")
+        val authority = noFragment.substringBefore('?').substringBefore('/')
+        val auth = Uri.decode(if (authority.contains('@')) authority.substringBeforeLast('@') else "")
+        val hostPort = authority.substringAfterLast('@')
+
+        val host: String
+        val portSpec: String
+        if (hostPort.startsWith("[")) {
+            host = hostPort.substringAfter('[').substringBefore(']')
+            portSpec = hostPort.substringAfter("]:", "")
+        } else {
+            host = hostPort.substringBeforeLast(':')
+            portSpec = if (hostPort.contains(':')) hostPort.substringAfterLast(':') else ""
+        }
+        // First entry of "443,5000-6000"; for a pure range use its first port.
+        // (Port hopping itself is not supported — the first port is used.)
+        val port = portSpec.split(',').firstOrNull()
+            ?.substringBefore('-')?.trim()?.toIntOrNull()
+            ?: (query.let { Uri.parse("hy2://x/?$it").getQueryParameter("mport") }
+                ?.split(',')?.firstOrNull()?.substringBefore('-')?.trim()?.toIntOrNull())
+            ?: 443
+
+        val q = Uri.parse("hy2://x/?$query")
+        val sni = q.getQueryParameter("sni")?.takeIf { it.isNotEmpty() } ?: host
+        val name = Uri.decode(fragment).ifEmpty { host }
+        val insecure = q.getQueryParameter("insecure") == "1" ||
+            q.getQueryParameter("allowInsecure") == "1"
+        val pin = q.getQueryParameter("pinSHA256") ?: ""
+        val obfs = q.getQueryParameter("obfs") ?: ""
+        val obfsPassword = q.getQueryParameter("obfs-password") ?: ""
+        val alpn = q.getQueryParameter("alpn")?.takeIf { it.isNotEmpty() } ?: "h3"
+
+        val streamSettings = JsonObject().apply {
+            addProperty("network", "hysteria")
+            addProperty("security", "tls")
+            add("tlsSettings", JsonObject().apply {
+                addProperty("serverName", sni)
+                add("alpn", gson.toJsonTree(alpn.split(",")))
+                // allowInsecure was removed from Xray — OutboundNormalizer converts this
+                // flag to a pinned certificate hash before the core starts.
+                if (insecure) addProperty("allowInsecure", true)
+                if (pin.isNotEmpty()) addProperty("pinnedPeerCertSha256", pin)
+            })
+            add("hysteriaSettings", JsonObject().apply {
+                addProperty("version", 2)
+                addProperty("auth", auth)
+            })
+            if (obfs == "salamander" && obfsPassword.isNotEmpty()) {
+                add("finalmask", JsonObject().apply {
+                    add("udp", gson.toJsonTree(listOf(mapOf(
+                        "type" to "salamander",
+                        "settings" to mapOf("password" to obfsPassword)
+                    ))))
+                })
+            }
+        }
 
         val outbound = JsonObject().apply {
-            addProperty("protocol", "hysteria2")
+            addProperty("protocol", "hysteria")
             addProperty("tag", "proxy")
             add("settings", gson.toJsonTree(mapOf(
-                "servers" to listOf(buildMap {
-                    put("address", host)
-                    put("port", port)
-                    put("password", auth)
-                })
+                "version" to 2,
+                "address" to host,
+                "port" to port
             )))
-            add("streamSettings", JsonObject().apply {
-                addProperty("network", "tcp")
-                addProperty("security", "tls")
-                add("tlsSettings", JsonObject().apply {
-                    addProperty("serverName", sni)
-                    if (insecure) addProperty("allowInsecure", true)
-                })
-            })
+            add("streamSettings", streamSettings)
         }
 
         return ProfileEntity(
@@ -406,8 +452,15 @@ object ConfigParser {
         alpn: String = "",
         authority: String = "",
         grpcMode: String = "",
-        allowInsecure: Boolean = false
+        allowInsecure: Boolean = false,
+        xhttpMode: String = "",
+        xhttpExtra: String = ""
     ): JsonObject {
+        // Xray >= 26.x removed the h2/http/h3/quic transports; XHTTP replaces them.
+        val network = when (network) {
+            "h2", "h3", "http", "quic", "splithttp" -> "xhttp"
+            else -> network
+        }
         return JsonObject().apply {
             addProperty("network", network)
 
@@ -428,7 +481,7 @@ object ConfigParser {
                         if (fp.isNotEmpty()) addProperty("fingerprint", fp)
                         if (allowInsecure) addProperty("allowInsecure", true)
                         val effectiveAlpn = if (alpn.isNotEmpty()) alpn
-                            else if (network == "grpc" || network == "h2") "h2"
+                            else if (network == "grpc" || network == "xhttp") "h2"
                             else ""
                         if (effectiveAlpn.isNotEmpty()) {
                             add("alpn", gson.toJsonTree(effectiveAlpn.split(",")))
@@ -456,24 +509,22 @@ object ConfigParser {
                         if (authority.isNotEmpty()) addProperty("authority", authority)
                     })
                 }
-                "h2", "http" -> {
-                    add("httpSettings", JsonObject().apply {
-                        addProperty("path", path)
-                        if (wsHost.isNotEmpty()) {
-                            add("host", gson.toJsonTree(listOf(wsHost)))
-                        }
-                    })
-                }
                 "httpupgrade" -> {
                     add("httpupgradeSettings", JsonObject().apply {
                         addProperty("path", path)
                         if (wsHost.isNotEmpty()) addProperty("host", wsHost)
                     })
                 }
-                "splithttp", "xhttp" -> {
-                    add("splithttpSettings", JsonObject().apply {
+                "xhttp" -> {
+                    add("xhttpSettings", JsonObject().apply {
                         addProperty("path", path)
                         if (wsHost.isNotEmpty()) addProperty("host", wsHost)
+                        if (xhttpMode.isNotEmpty()) addProperty("mode", xhttpMode)
+                        if (xhttpExtra.isNotEmpty()) {
+                            try {
+                                add("extra", gson.fromJson(xhttpExtra, JsonObject::class.java))
+                            } catch (_: Exception) { /* ignore malformed extra */ }
+                        }
                     })
                 }
                 "tcp" -> {
@@ -494,20 +545,17 @@ object ConfigParser {
                     }
                 }
                 "kcp", "mkcp" -> {
-                    add("kcpSettings", JsonObject().apply {
-                        add("header", JsonObject().apply {
-                            addProperty("type", headerType.ifEmpty { "none" })
+                    add("kcpSettings", JsonObject())
+                    // kcpSettings.header is ignored by recent Xray; header camouflage
+                    // now lives in finalmask (mkcp-legacy).
+                    if (headerType.isNotEmpty() && headerType != "none") {
+                        add("finalmask", JsonObject().apply {
+                            add("udp", gson.toJsonTree(listOf(mapOf(
+                                "type" to "mkcp-legacy",
+                                "settings" to mapOf("header" to headerType)
+                            ))))
                         })
-                    })
-                }
-                "quic" -> {
-                    add("quicSettings", JsonObject().apply {
-                        addProperty("security", "none")
-                        addProperty("key", "")
-                        add("header", JsonObject().apply {
-                            addProperty("type", headerType.ifEmpty { "none" })
-                        })
-                    })
+                    }
                 }
             }
         }

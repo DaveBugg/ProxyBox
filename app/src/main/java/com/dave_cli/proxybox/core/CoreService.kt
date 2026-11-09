@@ -138,13 +138,16 @@ class CoreService : VpnService() {
         scope.launch {
             try {
                 val db = AppDatabase.getInstance(applicationContext)
-                val profile = db.profileDao().getSelectedProfile()
-                if (profile == null) {
+                val selected = db.profileDao().getSelectedProfile()
+                if (selected == null) {
                     Log.e(TAG, "No selected profile, stopping service")
                     _vpnState.value = VpnState.ERROR
                     stopSelf()
                     return@launch
                 }
+                // Adapt the stored config to the current core syntax. May do a short network
+                // call (cert pinning) so it must run before the TUN is up.
+                val profile = OutboundNormalizer.prepare(selected)
 
                 activeProfileName = profile.name
                 val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
