@@ -15,9 +15,7 @@ Open-source Android VPN client powered by [Xray-core](https://github.com/XTLS/Xr
 
 If you find this project useful, consider supporting development:
 
-**USDT (TRC20):** `TMWTigPZgTkekaRUjUrhJUNENFeUAE7T15`
-
-<img src="docs/donate_usdt_trc20.png" alt="Donate USDT TRC20" width="200"/>
+**BTC:** `bc1qae55pf3cymnpdyqf2zpqec6wflpeydkydugsnj`
 
 ## Screenshots
 
